@@ -37,17 +37,6 @@
 #include "Unit.h"
 #include "World.h"
 
-//#include "AccountMgr.h"
-//#include <cstring>
-//#include "Group.h"
-//#include "Language.h"
-//#include "math.h"
-//#include "ObjectMgr.h"
-//#include "ScriptedGossip.h"
-//#include <sstream>
-//#include <string>
-//#include <unordered_map>
-
 uint8 PREMIUM_TYPE;
 uint8 PREMIUM_TIMER_ENABLE;
 uint64 PREMIUM_TIMER_DURATION = (((1 * 60) * 60) * 24); // Defining day in ms. 1000 = 1 second. 1 second * 60 = 1 minute. 1 min * 60 = 1 hour. 1 hour * 24 = 1 day. we then will call from the conf and get x for days.
@@ -207,7 +196,9 @@ public:
 			if (PREM::IsPremiumRagePointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Rage Points Enabled x%.2f", PREMIUM_MODIFIER); };
 			if (PREM::CanWaterBreathe()){ TC_LOG_INFO("server.loading", "- Premium Water Breathing enabled"); };
 			if (PREM::CanDecreaseSpellCost()){ TC_LOG_INFO("server.loading", "- Premium Reduced Spell Costs enabled"); };
-			if (PREMIUM_TITLE_ID > 0){ TC_LOG_INFO("server.loading", "- Premium Title ID:%u enabled", PREMIUM_TITLE_ID); };
+
+			if (!sCharTitlesStore.LookupEntry(PREMIUM_TITLE_ID)) { PREMIUM_TITLE_ID = 0; };
+			if (PREMIUM_TITLE_ID > 0) { TC_LOG_INFO("server.loading", "- Premium Title ID:%u enabled", PREMIUM_TITLE_ID); };
 
 			QueryResult PremLocQry = WorldDatabase.Query("SELECT * FROM premium_locations");
 
