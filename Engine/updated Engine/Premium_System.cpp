@@ -490,7 +490,9 @@ public:
 		sPremiumSystemMgr->SetPremiumType(sConfigMgr->GetBoolDefault("PREM.TYPE", false));          // 0 = acct, 1 = character.
 		sPremiumSystemMgr->SetTimerEnabled(sConfigMgr->GetBoolDefault("PREM.TIMED", false));        // 0 = no, 1 = yes duration - Premium will reset after x days..
 		sPremiumSystemMgr->SetTimerDuration(sConfigMgr->GetIntDefault("PREM.DURATION", 30));        // x in days.
+
 		sPremiumSystemMgr->SetGMMinRank(sConfigMgr->GetIntDefault("PREM.GM_MINIMUM_RANK", 3));
+
 		sPremiumSystemMgr->SetUpgradeItem(sConfigMgr->GetIntDefault("PREM.UPGRADE_ITEM", 64000));
 		sPremiumSystemMgr->SetItemEnabled(sConfigMgr->GetBoolDefault("PREM.ITEMS", false));
 		sPremiumSystemMgr->SetModifier(sConfigMgr->GetFloatDefault("PREM.MODIFIER", 0.2f));
