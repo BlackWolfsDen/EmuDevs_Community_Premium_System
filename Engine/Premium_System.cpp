@@ -357,31 +357,9 @@ public:
 
 			}
 
-
-			QueryResult PremClassSpellsQry = WorldDatabase.Query("SELECT * FROM premium_class_spells");
-
-			if (PremClassSpellsQry)
-			{
-				do
-				{
-					Field *fields = PremClassSpellsQry->Fetch();
-					// Save the DB values to the LocData object
-					uint8 entry = fields[0].GetUInt8();
-					uint8 class_id = fields[1].GetUInt8();
-					uint8 spell_id = fields[2].GetUInt32();
-
-					ClassSpells& data7 = PremiumClassSpells[entry];
-					data7.class_id = class_id;
-					data7.spell_id = spell_id;
-
-				} while (PremClassSpellsQry->NextRow());
-
-			}
-
 			TC_LOG_INFO("server.loading", "- Premium rank upgrade item id:%u", PREMIUM_UPGRADE_ITEM);
 			TC_LOG_INFO("server.loading", "______________________________________");
 		}
-
 };
 
 uint8 PREM::GetPremiumType()
