@@ -11,7 +11,7 @@
 		finished : unfinished Public Release
 		public released : 04/20/2016
 		lead programmer : slp13at420
-		ideas provided by : Portals, Kaev, Vitrex, jonmii, slp13at420.
+		ideas provided by : Wolord, Portals, Kaev, Vitrex, jonmii, slp13at420.
 		scripting provided by : slp13at420.
 		scripting guideance provided by : GrandElf, Rochet2.
 
@@ -1208,7 +1208,7 @@ public:
 
 		static std::vector<ChatCommand> PremiumCommandUnlearnMyTable =
 		{
-			{ "spells", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumUnlearnMySpells, "allows the player to learn all there class spells." },
+			{ "spells", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumUnlearnMySpells, "allows the player to unlearn all there class spells." },
 		};
 
 		static std::vector<ChatCommand> PremiumCommandUnlearnTable =
@@ -1642,89 +1642,15 @@ public:
 		return return_type;
 	}
 
-	static bool HandlePremiumLearnMySpells(ChatHandler* handler, const char* args)
+	static void PremiumLearUnlearnSpells(ChatHandler* handler, bool learn)
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 		uint8 pClass = player->getClass();
-
-		bool return_type;
 		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+		ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(pClass);
 
-			return_type = false;
-		}
-		else
-		{
-			ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(pClass);
-
-				if (!classEntry) 
-					return true;
-
-			uint32 family = classEntry->spellfamily;
-
-			for (uint32 i = 0; i < sSkillLineAbilityStore.GetNumRows(); ++i)
-			{
-				SkillLineAbilityEntry const* entry = sSkillLineAbilityStore.LookupEntry(i);
-
-					if (!entry)
-						continue;
-
-				SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(entry->spellId);
-
-					if (!spellInfo)
-						continue;
-
-					// skip server-side/triggered spells
-					if (spellInfo->SpellLevel == 0)
-						continue;
-
-					// skip wrong class/race skills
-					if (!handler->GetSession()->GetPlayer()->IsSpellFitByClassAndRace(spellInfo->Id))
-						continue;
-
-					// skip other spell families
-					if (spellInfo->SpellFamilyName != family)
-						continue;
-
-					// skip spells with first rank learned as talent (and all talents then also)
-					if (GetTalentSpellCost(spellInfo->GetFirstRankSpell()->Id) > 0)
-						continue;
-
-					// skip broken spells
-					if (!SpellMgr::IsSpellValid(spellInfo, player, false))
-						continue;
-
-				player->LearnSpell(spellInfo->Id, false);
-			}
-		}
-		return return_type;
-	}
-
-	static bool HandlePremiumUnlearnMySpells(ChatHandler* handler, const char* args)
-	{
-		Player* player = handler->GetSession()->GetPlayer();
-		uint8 pClass = player->getClass();
-
-		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
-
-		if (!IsPrem)
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return_type = false;
-		}
-		else
-		{
-			ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(pClass);
-
-			if (!classEntry)
-				return true;
-
-			uint32 family = classEntry->spellfamily;
+		uint32 family = classEntry->spellfamily;
 
 			for (uint32 i = 0; i < sSkillLineAbilityStore.GetNumRows(); ++i)
 			{
@@ -1758,10 +1684,57 @@ public:
 				if (!SpellMgr::IsSpellValid(spellInfo, player, false))
 					continue;
 
-//				player->LearnSpell(spellInfo->Id, false);
-				if (player->HasSpell(spellInfo->Id))
-					player->RemoveSpell(spellInfo->Id, false, true);
+				if (learn) { player->LearnSpell(spellInfo->Id, false); }
+				else
+				{
+					if (player->HasSpell(spellInfo->Id))
+					{
+						player->RemoveSpell(spellInfo->Id, false, true);
+						handler->SendSysMessage(LANG_FORGET_SPELL);
+					}
+				}
 			}
+			if (learn) { handler->SendSysMessage(LANG_COMMAND_LEARN_CLASS_SPELLS); }
+	}
+
+	static bool HandlePremiumLearnMySpells(ChatHandler* handler, const char* args)
+	{
+		Player* player = handler->GetSession()->GetPlayer();
+		uint8 pClass = player->getClass();
+
+		bool return_type;
+		bool IsPrem = PREM::IsPlayerPremium(player);
+
+		if (!IsPrem)
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
+		}
+		else
+		{
+			PremiumLearUnlearnSpells(handler, true);
+		}
+		return return_type;
+	}
+
+	static bool HandlePremiumUnlearnMySpells(ChatHandler* handler, const char* args)
+	{
+		Player* player = handler->GetSession()->GetPlayer();
+		uint8 pClass = player->getClass();
+
+		bool return_type;
+		bool IsPrem = PREM::IsPlayerPremium(player);
+
+		if (!IsPrem)
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
+		}
+		else
+		{
+			PremiumLearUnlearnSpells(handler, false);
 		}
 		return return_type;
 	}
