@@ -49,6 +49,13 @@ struct PremiumTeamLocationElements
 	float o;
 };
 
+struct ClassSpells
+{
+	uint64 id;
+	uint8 class_id;
+	uint32 spell_id;
+};
+
 class PREM
 {
 
