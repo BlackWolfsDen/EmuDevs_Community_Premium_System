@@ -4,6 +4,7 @@
 struct PremiumElements
 {
 	uint32 id;
+	bool dndappear;
 	uint8 premium;
 	uint32 hp;
 	uint32 power_max;
@@ -86,6 +87,7 @@ public:
 	// Player Getterz
 	static uint32 GetPlayerPremiumId(Player* player);
 	static bool IsPlayerPremium(Player* player);
+	static bool DnDAppear(Player* player);
 	static void UpdatePlayerCustomHomeTeleport(uint32 guid, uint32 map_id, float x, float y, float z, float o);
 	static uint64 GetPlayerPremiumStartTimeInSeconds(Player* player);
 	static uint64 GetPlayerPremiumRemainingTimeInSeconds(Player* player);

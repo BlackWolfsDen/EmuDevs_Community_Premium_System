@@ -506,6 +506,13 @@ void PREM::AddPremiumToPlayer(Player* player)
 	ChatHandler(player->GetSession()).PSendSysMessage("player:PremiumRankAdded.");
 }
 
+bool PREM::DnDAppear(Player* player)
+{
+	uint32 id = PREM::GetPlayerPremiumId(player);
+
+	return Premium[id].dndappear;
+}
+
 void PREM::RemovePremiumFromPlayer(Player* player)
 {
 	uint32 id = PREM::GetPlayerPremiumId(player);
@@ -1194,6 +1201,17 @@ public:
 			{ "my", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium learn my sub command tree.", PremiumCommandUnlearnMyTable },
 		};
 
+		static std::vector<ChatCommand> PremiumCommandDnDAppearTable =
+		{
+			{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOffCommand, "allows Premium playesr to appear to you." },
+			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOnCommand, "Blocks Premium players from appearing to you." },
+		};
+
+		static std::vector<ChatCommand> PremiumCommandDnDTable =
+		{
+			{ "appear", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium learn my sub command tree.", PremiumCommandDnDAppearTable },
+		};
+
 		static std::vector<ChatCommand> PremiumCommandTable =
 		{
 			{ "chat", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Chat sub command tree.", ChatPremiumCommandChangeTable },
@@ -1210,6 +1228,9 @@ public:
 			{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOffCommand, "Fast un-activate Premium Title." },
 			{ "learn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Learn sub command tree.", PremiumCommandLearnTable },
 			{ "unlearn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Unlearn sub command tree.", PremiumCommandUnlearnTable },
+			{ "who", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumWhoCommand, "List online premium members." },
+			{ "appear", rbac::RBAC_IN_GRANTED_LIST, false, &HandlePremiumAppearCommand, "" },
+			{ "dnd", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium DnD sub command tree.", PremiumCommandDnDTable },
 
 		};
 
@@ -1713,6 +1734,165 @@ public:
 		else
 		{
 			PremiumLearUnlearnSpells(handler, false);
+		}
+		return return_type;
+	}
+
+	static bool HandlePremiumWhoCommand(ChatHandler* handler, const char* args)
+	{
+		Player* player = handler->GetSession()->GetPlayer();
+		uint8 pClass = player->getClass();
+
+		bool return_type;
+		bool IsPrem = PREM::IsPlayerPremium(player);
+
+		if (!IsPrem)
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
+		}
+		else
+		{
+			SessionMap sessions = sWorld->GetAllSessions();
+
+			ChatHandler(player->GetSession()).PSendSysMessage("Current Premium players online:");
+
+			for (SessionMap::iterator itr = sessions.begin(); itr != sessions.end(); ++itr)
+			{
+				if (!itr->second)
+					continue;
+
+			Player *target = itr->second->GetPlayer();
+
+				if (PREM::IsPlayerPremium(target))
+				{
+					ChatHandler(player->GetSession()).PSendSysMessage("%s, ", target->GetName().c_str());
+				}
+			}
+		}
+		return return_type;
+	}
+
+	static bool HandlePremiumAppearCommand(ChatHandler* handler, const char* args)
+	{
+		Player* player = handler->GetSession()->GetPlayer();
+		uint8 pClass = player->getClass();
+
+		bool IsPrem = PREM::IsPlayerPremium(player);
+
+		if (!IsPrem)
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return false;
+		}
+		else
+		{
+			Player* target;
+			ObjectGuid targetGuid;
+			std::string targetName;
+
+			if (!handler->extractPlayerTarget((char*)args, &target, &targetGuid, &targetName))
+				return false;
+
+			if (!target)
+				return false;
+
+			bool check = PREM::DnDAppear(target);
+
+			if (!check)
+			{
+				if (target == player || targetGuid == player->GetGUID())
+				{
+					handler->SendSysMessage(LANG_CANT_TELEPORT_SELF);
+					handler->SetSentErrorMessage(true);
+					return false;
+				}
+
+				Map* map = target->GetMap();
+				std::string chrNameLink = handler->playerLink(targetName);
+
+				if (map->IsBattlegroundOrArena())
+				{
+					handler->PSendSysMessage(LANG_CANNOT_GO_TO_BG_GM, chrNameLink.c_str());
+					handler->SetSentErrorMessage(true);
+					return false;
+				}
+
+				if (map->IsDungeon())
+				{
+					handler->PSendSysMessage(LANG_CANNOT_GO_TO_INST_PARTY, chrNameLink.c_str());
+					handler->SetSentErrorMessage(true);
+					return false;
+				}
+
+				player->SaveRecallPosition();
+
+				float x, y, z;
+				target->GetContactPoint(player, x, y, z);
+
+				player->TeleportTo(target->GetMapId(), x, y, z, player->GetAngle(target), TEXT_EMOTE_BOGGLE);
+				player->SetPhaseMask(target->GetPhaseMask(), true);
+
+				ChatHandler(target->GetSession()).PSendSysMessage("%s Has Premium appeared to You.", player->GetName().c_str());
+				ChatHandler(player->GetSession()).PSendSysMessage("You have Premium appeared to %s.", target->GetName().c_str());
+				return true;
+			}
+			else
+			{
+				ChatHandler(target->GetSession()).PSendSysMessage("%s Has attempted to Premium appear to You.", player->GetName().c_str());
+				ChatHandler(player->GetSession()).PSendSysMessage("%s Has -DnD- blocked Premium appear.", target->GetName().c_str());
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static bool HandlePremiumDnDAppearOffCommand(ChatHandler* handler, const char* args)
+	{
+		Player* player = handler->GetSession()->GetPlayer();
+		uint8 pClass = player->getClass();
+
+		bool return_type;
+		bool IsPrem = PREM::IsPlayerPremium(player);
+		uint32 id = PREM::GetPlayerPremiumId(player);
+
+		if (!IsPrem)
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
+		}
+		else
+		{
+			Premium[id].dndappear = false;
+
+			ChatHandler(player->GetSession()).PSendSysMessage("You have allowed other Premiums to appear to you.");
+		}
+		return return_type;
+	}
+
+	static bool HandlePremiumDnDAppearOnCommand(ChatHandler* handler, const char* args)
+	{
+		Player* player = handler->GetSession()->GetPlayer();
+		uint8 pClass = player->getClass();
+
+		bool return_type;
+		bool IsPrem = PREM::IsPlayerPremium(player);
+		uint32 id = PREM::GetPlayerPremiumId(player);
+
+		if (!IsPrem)
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
+		}
+		else
+		{
+			Premium[id].dndappear = true;
+
+			ChatHandler(player->GetSession()).PSendSysMessage("You have blocked other Premiums from appearing to you.");
 		}
 		return return_type;
 	}
