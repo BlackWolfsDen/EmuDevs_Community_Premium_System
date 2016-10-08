@@ -1,7 +1,7 @@
 /*
 			© EmuDev's Premium System ©
 
-	By slp13at420 `The Mad Scientist` of EmuDevs.com ©
+	By Grumbo / slp13at420 `The Mad Scientist` of EmuDevs.com ©
 	with the community of EmuDevs.com,
 	for the community of EmuDevs.com.
 
