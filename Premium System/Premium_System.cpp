@@ -834,7 +834,7 @@ public:
 
 // Item Functions
 
-void RemoveItem(uint32 id, Player* player){	player->DestroyItemCount(uint32(id), 1, true);}
+void PREM::RemoveItem(uint32 id, Player* player){	player->DestroyItemCount(uint32(id), 1, true);}
 
 void PREM::UpdateItemPremiumValue(uint32 item_id, uint8 value)
 {
@@ -862,7 +862,7 @@ public:
 				}
 				else
 				{
-					RemoveItem(item->GetEntry(), player);
+					sPREM->RemoveItem(item->GetEntry(), player);
 
 					sPREM->UpdatePlayerPremiumValue(player, 1, sWorld->GetGameTime());
 

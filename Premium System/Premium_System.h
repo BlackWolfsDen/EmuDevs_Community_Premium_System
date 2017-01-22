@@ -138,6 +138,11 @@ public:
 	// Item Setterz
 	static void UpdateItemPremiumValue(uint32 item_id, uint8 value);
 
+	// Tools
+	bool CheckIfPlayerInCombatOrDead(Player* player);
+	void TeleportPlayer(Player* player, uint8 id);
+	void RemoveItem(uint32 id, Player* player);
+
 	// Public Tables
 	std::unordered_map<uint32, PremiumElements>Premium;
 	std::unordered_map<uint32, PremiumItemElements>PremiumItem;
@@ -149,6 +154,7 @@ public:
 	std::unordered_map<uint8, ClassSpells>PremiumClassSpells;
 
 private:
+
 	// Private Variables
 	uint8 PREMIUM_TYPE;
 	uint8 PREMIUM_TIMER_ENABLE;
@@ -169,10 +175,6 @@ private:
 	uint8 PREMIUM_WATER_BREATHE;
 	uint8 PREMIUM_SPELL_COST_DECREASE;
 
-	// Tools
-	static bool CheckIfPlayerInCombatOrDead(Player* player);
-	static void TeleportPlayer(Player* player, uint8 id);
-	static void RemoveItem(uint32 id, Player* player);
 };
 
 #define sPREM PREM::instance()
