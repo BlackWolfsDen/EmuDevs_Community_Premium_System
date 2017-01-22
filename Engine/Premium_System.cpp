@@ -41,34 +41,6 @@
 #include "Unit.h"
 #include "World.h"
 
-uint8 PREMIUM_TYPE;
-uint8 PREMIUM_TIMER_ENABLE;
-uint64 PREMIUM_TIMER_DURATION = (((1 * 60) * 60) * 24); // Defining day in ms. 1000 = 1 second. 1 second * 60 = 1 minute. 1 min * 60 = 1 hour. 1 hour * 24 = 1 day. we then will call from the conf and get x for days.
-uint8 PREMIUM_GM_MINIMUM_RANK;
-uint32 PREMIUM_UPGRADE_ITEM;
-uint8 PREMIUM_ITEMS_ENABLE;
-float PREMIUM_MODIFIER;
-uint32 PREMIUM_CHAT_DELAY;
-uint8 PREMIUM_CHAT_TEAM;
-uint8 PREMIUM_TP_ENABLE;
-uint32 PREMIUM_TP_BONUS;
-uint8 PREMIUM_HP_ENABLE;
-uint8 PREMIUM_MANA_ENABLE;
-uint8 PREMIUM_RAGE_ENABLE;
-uint32 PREMIUM_TITLE_ID;
-uint32 PREMIUM_TITLE_MASK_ID;
-uint8 PREMIUM_WATER_BREATHE;
-uint8 PREMIUM_SPELL_COST_DECREASE;
-
-std::unordered_map<uint32, PremiumElements>Premium;
-std::unordered_map<uint32, PremiumItemElements>PremiumItem;
-std::unordered_map<uint32, PremiumLocationElements>PremiumLocations;
-std::unordered_map<uint32, PremiumLocationElements>PremiumMallLocations;
-std::unordered_map<uint32, PremiumLocationElements>PremiumPublicMallLocations;
-std::unordered_map<uint32, PremiumPlayerLocationElements>PremiumPlayerLocations;
-std::unordered_map<uint32, PremiumTeamLocationElements>PremiumTeamLocations;
-std::unordered_map<uint8, ClassSpells>PremiumClassSpells;
-
 int BUFFS[24] = { 24752, 48074, 43223, 36880, 467, 48469, 48162, 48170, 16877, 10220, 13033, 11735, 10952, 23948, 26662, 47440, 53307, 132, 23737, 48470, 43002, 26393, 24705, 69994 };
 int DEBUFFS[4] = { 57724, 57723, 80354, 95809 };
 
@@ -76,6 +48,34 @@ PREM::PREM() { }
 
 PREM::~PREM()
 {
+	for (std::unordered_map<uint32, PremiumElements>::iterator itr = Premium.begin(); itr != Premium.end(); ++itr)
+		delete &itr->second;
+	for (std::unordered_map<uint32, PremiumItemElements>::iterator itr = PremiumItem.begin(); itr != PremiumItem.end(); ++itr)
+		delete &itr->second;
+	for (std::unordered_map<uint32, PremiumLocationElements>::iterator itr = PremiumLocations.begin(); itr != PremiumLocations.end(); ++itr)
+		delete &itr->second;
+	for (std::unordered_map<uint32, PremiumLocationElements>::iterator itr = PremiumMallLocations.begin(); itr != PremiumMallLocations.end(); ++itr)
+		delete &itr->second;
+	for (std::unordered_map<uint32, PremiumLocationElements>::iterator itr = PremiumPublicMallLocations.begin(); itr != PremiumPublicMallLocations.end(); ++itr)
+		delete &itr->second;
+	for (std::unordered_map<uint32, PremiumPlayerLocationElements>::iterator itr = PremiumPlayerLocations.begin(); itr != PremiumPlayerLocations.end(); ++itr)
+		delete &itr->second;
+	for (std::unordered_map<uint32, PremiumTeamLocationElements>::iterator itr = PremiumTeamLocations.begin(); itr != PremiumTeamLocations.end(); ++itr)
+		delete &itr->second;
+
+	Premium.clear();
+	PremiumItem.clear();
+	PremiumLocations.clear();
+	PremiumMallLocations.clear();
+	PremiumPublicMallLocations.clear();
+	PremiumPlayerLocations.clear();
+	PremiumTeamLocations.clear();
+}
+
+PREM* PREM::instance()
+{
+	static PREM instance;
+	return &instance;
 }
 
 // Global Functions
@@ -109,21 +109,21 @@ std::string PREM::GetAmountInString(uint32 amount)
 	{
 		tmp = floor(amount / 10000); 
 		amount = amount - (tmp * 10000);
-		output = output + PREM::ConvertNumberToString(tmp) + " Gold, ";
+		output = output + sPREM->ConvertNumberToString(tmp) + " Gold, ";
 	}
 
 	if (amount > 99)
 	{
 		tmp = floor(amount / 100);
 		amount = amount - (tmp * 100);
-		output = output + PREM::ConvertNumberToString(tmp) + " Silver, ";
+		output = output + sPREM->ConvertNumberToString(tmp) + " Silver, ";
 	}
 
 	if (amount <= 99)
 	{
 		tmp = (amount);
 		amount = amount - (tmp);
-		output = output + PREM::ConvertNumberToString(tmp) + " Copper";
+		output = output + sPREM->ConvertNumberToString(tmp) + " Copper";
 	}
 
 	return output;
@@ -139,28 +139,28 @@ public:
 			TC_LOG_INFO("server.loading", "______________________________________");
 			TC_LOG_INFO("server.loading", "-     EmuDevs.com Premium System     -");
 
-			PREMIUM_TYPE				= sConfigMgr->GetIntDefault("PREM.TYPE", 0); // 0 = acct :: 1 = character.
-			PREMIUM_TIMER_ENABLE		= sConfigMgr->GetIntDefault("PREM.TIMED", 0); // 0 = no :: 1 = yes duration -> Premium will reset after x days..
-			PREMIUM_TIMER_DURATION		*= sConfigMgr->GetIntDefault("PREM.DURATION", 30); // x in days.
-			PREMIUM_GM_MINIMUM_RANK		= sConfigMgr->GetIntDefault("PREM.GM_MINIMUM_RANK", 3);
-			PREMIUM_UPGRADE_ITEM		= sConfigMgr->GetIntDefault("PREM.UPGRADE_ITEM", 64000);
-			PREMIUM_ITEMS_ENABLE		= sConfigMgr->GetIntDefault("PREM.ITEMS", 0);
-			PREMIUM_MODIFIER			= sConfigMgr->GetFloatDefault("PREM.MODIFIER", 0.2f);
-			PREMIUM_CHAT_DELAY			= sConfigMgr->GetIntDefault("PREM.CHAT_TIMER", 5); // in seconds // 5 = 5 seconds.
-			PREMIUM_CHAT_TEAM			= sConfigMgr->GetIntDefault("PREM.CHAT_TEAM", 0); // 0 = team chat only // 1 world chat.
-			PREMIUM_TP_ENABLE			= sConfigMgr->GetIntDefault("PREM.TP_ENABLE", 0);
-			PREMIUM_TP_BONUS			= sConfigMgr->GetIntDefault("PREM.TP_BONUS", 14);
-			PREMIUM_HP_ENABLE			= sConfigMgr->GetIntDefault("PREM.HP_ENABLE", 0);
-			PREMIUM_MANA_ENABLE			= sConfigMgr->GetIntDefault("PREM.MANA_ENABLE", 0);
-			PREMIUM_RAGE_ENABLE			= sConfigMgr->GetIntDefault("PREM.RAGE_ENABLE", 0);
-			PREMIUM_TITLE_ID			= sConfigMgr->GetIntDefault("PREM.TITLE_ID", 500);
-			PREMIUM_TITLE_MASK_ID		= sConfigMgr->GetIntDefault("PREM.TITLE_MASK_ID", 156);
-			PREMIUM_WATER_BREATHE		= sConfigMgr->GetIntDefault("PREM.WATER_BREATHE", 0);
-			PREMIUM_SPELL_COST_DECREASE = sConfigMgr->GetIntDefault("PREM.SPELL_COST_DECREASE", 0);
+			sPREM->SetPremiumType(sConfigMgr->GetIntDefault("PREM.TYPE", 0)); // 0 = acct :: 1 = character.
+			sPREM->SetPremiumModifier(sConfigMgr->GetFloatDefault("PREM.MODIFIER", 0.2f));
+			sPREM->SetPremiumTimed(sConfigMgr->GetBoolDefault("PREM.TIMED", 0)); // 0 = no :: 1 = yes duration -> Premium will reset after x days..
+			sPREM->SetPremiumDuration(sConfigMgr->GetIntDefault("PREM.DURATION", 30)); // x in days.
+			sPREM->SetGMMinimumRank(sConfigMgr->GetIntDefault("PREM.GM_MINIMUM_RANK", 3));
+			sPREM->SetPremiumUgradeItem(sConfigMgr->GetIntDefault("PREM.UPGRADE_ITEM", 64000));
+			sPREM->SetWaterBreathe(sConfigMgr->GetBoolDefault("PREM.WATER_BREATHE", 0));
+			sPREM->SetDecreaseSpellCost(sConfigMgr->GetBoolDefault("PREM.SPELL_COST_DECREASE", 0));
+			sPREM->SetPremiumItemsEnabled(sConfigMgr->GetBoolDefault("PREM.ITEMS", 0));
+			sPREM->SetPremiumTalentPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.TP_ENABLE", 0));
+			sPREM->SetPremiumTalentPointBonus(sConfigMgr->GetIntDefault("PREM.TP_BONUS", 14));
+			sPREM->SetPremiumHealthPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.HP_ENABLE", 0));
+			sPREM->SetPremiumManaPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.MANA_ENABLE", 0));
+			sPREM->SetPremiumRagePointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.RAGE_ENABLE", 0));
+			sPREM->SetPremiumTitleId(sConfigMgr->GetIntDefault("PREM.TITLE_ID", 500));
+			sPREM->SetPremiumTitleMaskId(sConfigMgr->GetIntDefault("PREM.TITLE_MASK_ID", 156));
+			sPREM->SetPremiumChatDelay(sConfigMgr->GetIntDefault("PREM.CHAT_TIMER", 5)); // in seconds // 5 = 5 seconds.
+			sPREM->SetPremiumChatTeam(sConfigMgr->GetIntDefault("PREM.CHAT_TEAM", 0)); // 0 = team chat only // 1 world chat.
 
 			uint32 PREMIUM_ITEM_COUNT = 0;
 
-				if (PREMIUM_ITEMS_ENABLE > 0)
+				if (sPREM->IsPremiumItemsEnabled())
 				{
 					QueryResult ItemQery = WorldDatabase.PQuery("SELECT `entry`, `premium` FROM `item_template` WHERE `premium`='1';");
 
@@ -172,7 +172,7 @@ public:
 							uint32 item_id = fields[0].GetUInt32();
 							uint32 premium = fields[1].GetUInt8();
 
-							PremiumItemElements& data1 = PremiumItem[item_id];
+							PremiumItemElements& data1 = sPREM->PremiumItem[item_id];
 							// Save the DB values to the MyData object
 							data1.id = item_id;
 							data1.premium = premium;
@@ -183,35 +183,35 @@ public:
 					}
 				}
 
-			if (PREMIUM_TYPE == 0){ TC_LOG_INFO("server.loading", "- Premium type:Account"); };
-			if (PREMIUM_TYPE > 0){ TC_LOG_INFO("server.loading", "- Premium type:Character"); };
+			if (sPREM->GetPremiumType() == 0){ TC_LOG_INFO("server.loading", "- Premium type:Account"); };
+			if (sPREM->GetPremiumType() > 0){ TC_LOG_INFO("server.loading", "- Premium type:Character"); };
 
-			TC_LOG_INFO("server.loading", "- Premium GM Minimum rank:%u", PREMIUM_GM_MINIMUM_RANK);
+			TC_LOG_INFO("server.loading", "- Premium GM Minimum rank:%u", sPREM->GetGMMinimumRank());
 
-			if (PREM::IsPremiumTimed()){ TC_LOG_INFO("server.loading", "- Premium rank duration activated"); };
-			if (PREM::IsPremiumTimed()){ TC_LOG_INFO("server.loading", "- Premium rank duration:%u days", ((((PREMIUM_TIMER_DURATION) / 60) / 60) / 24)); };
-			if (PREM::IsPremiumItemsEnabled()){ TC_LOG_INFO("server.loading", "- Premium Items loaded:%u", PREMIUM_ITEM_COUNT); };
+			if (sPREM->IsPremiumTimed()){ TC_LOG_INFO("server.loading", "- Premium rank duration activated"); };
+			if (sPREM->IsPremiumTimed()){ TC_LOG_INFO("server.loading", "- Premium rank duration:%u days", sPREM->GetPremiumDurationInDays()); };
+			if (sPREM->IsPremiumItemsEnabled()){ TC_LOG_INFO("server.loading", "- Premium Items loaded:%u", PREMIUM_ITEM_COUNT); };
 
-			TC_LOG_INFO("server.loading", "- Premium modifier value:%.2f", PREMIUM_MODIFIER);
+			TC_LOG_INFO("server.loading", "- Premium modifier value:%.2f", sPREM->GetPremiumModifier());
 
-			if (PREM::IsPremiumTalentPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Talent Points Enabled +%u", PREMIUM_TP_BONUS); };
-			if (PREM::IsPremiumHealthPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Health Points Enabled x%.2f", PREMIUM_MODIFIER); };
-			if (PREM::IsPremiumManaPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Mana Points Enabled x%.2f", PREMIUM_MODIFIER); };
-			if (PREM::IsPremiumRagePointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Rage Points Enabled x%.2f", PREMIUM_MODIFIER); };
-			if (PREM::CanWaterBreathe()){ TC_LOG_INFO("server.loading", "- Premium Water Breathing enabled"); };
-			if (PREM::CanDecreaseSpellCost()){ TC_LOG_INFO("server.loading", "- Premium Reduced Spell Costs enabled"); };
+			if (sPREM->IsPremiumTalentPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Talent Points Enabled +%u", sPREM->GetPremiumTalentPointBonus()); };
+			if (sPREM->IsPremiumHealthPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Health Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
+			if (sPREM->IsPremiumManaPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Mana Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
+			if (sPREM->IsPremiumRagePointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Rage Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
+			if (sPREM->CanWaterBreathe()){ TC_LOG_INFO("server.loading", "- Premium Water Breathing enabled"); };
+			if (sPREM->CanDecreaseSpellCost()){ TC_LOG_INFO("server.loading", "- Premium Reduced Spell Costs enabled"); };
 
-			if (PREMIUM_TITLE_ID > 0) // this block is to protect from crashing error where title is enabled but does not exist in the dbc file.
+			if (sPREM->GetPremiumTitleId() > 0) // this block is to protect from crashing error where title is enabled but does not exist in the dbc file.
 			{
-				if (!sCharTitlesStore.LookupEntry(PREMIUM_TITLE_ID))
+				if (!sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()))
 				{
-					TC_LOG_INFO("server.loading", "- Premium Title ID:%u does NOT exist in dbc file.", PREMIUM_TITLE_ID);
-					TC_LOG_INFO("server.loading", "- Premium Title:%u Disabled", PREMIUM_TITLE_ID);
+					TC_LOG_INFO("server.loading", "- Premium Title ID:%u does NOT exist in dbc file.", sPREM->GetPremiumTitleId());
+					TC_LOG_INFO("server.loading", "- Premium Title:%u Disabled", sPREM->GetPremiumTitleId());
 
-					PREMIUM_TITLE_ID = 0;
+					sPREM->SetPremiumTitleId(0);
 				}
 
-				else { TC_LOG_INFO("server.loading", "- Premium Title ID:%u enabled", PREMIUM_TITLE_ID); };
+				else { TC_LOG_INFO("server.loading", "- Premium Title ID:%u enabled", sPREM->GetPremiumTitleId()); };
 			}
 
 			QueryResult PremLocQry = WorldDatabase.Query("SELECT * FROM premium_locations");
@@ -229,7 +229,7 @@ public:
 					float z = fields[4].GetFloat();
 					float o = fields[5].GetFloat();
 
-					PremiumLocationElements& data2 = PremiumLocations[id]; // like Lua table GWARZ[guild_id].entry
+					PremiumLocationElements& data2 = sPREM->PremiumLocations[id]; // like Lua table GWARZ[guild_id].entry
 					data2.id = id;
 					data2.map_id = map_id;
 					data2.x = x;
@@ -241,7 +241,7 @@ public:
 
 			}
 
-			if (PremLocQry){ TC_LOG_INFO("server.loading", "- Premium Locations Loaded:%u", PremiumLocations.size()); };
+			if (PremLocQry){ TC_LOG_INFO("server.loading", "- Premium Locations Loaded:%u", sPREM->PremiumLocations.size()); };
 
 			QueryResult PremMallLocQry = WorldDatabase.Query("SELECT * FROM premium_Mall_locations");
 
@@ -258,7 +258,7 @@ public:
 					float z = fields[4].GetFloat();
 					float o = fields[5].GetFloat();
 
-					PremiumLocationElements& data3 = PremiumMallLocations[id]; // like Lua table GWARZ[guild_id].entry
+					PremiumLocationElements& data3 = sPREM->PremiumMallLocations[id]; // like Lua table GWARZ[guild_id].entry
 					data3.id = id;
 					data3.map_id = map_id;
 					data3.x = x;
@@ -270,7 +270,7 @@ public:
 
 			}
 
-			if (PremMallLocQry){ TC_LOG_INFO("server.loading", "- Premium Mall Locations Loaded:%u", PremiumMallLocations.size()); };
+			if (PremMallLocQry){ TC_LOG_INFO("server.loading", "- Premium Mall Locations Loaded:%u", sPREM->PremiumMallLocations.size()); };
 
 			QueryResult PremPlayerLocQry = WorldDatabase.Query("SELECT * FROM premium_player_teleports");
 
@@ -287,7 +287,7 @@ public:
 					float z = fields[4].GetFloat();
 					float o = fields[5].GetFloat();
 
-					PremiumPlayerLocationElements& data4 = PremiumPlayerLocations[guid]; // like Lua table GWARZ[guild_id].entry
+					PremiumPlayerLocationElements& data4 = sPREM->PremiumPlayerLocations[guid]; // like Lua table GWARZ[guild_id].entry
 					data4.guid = guid;
 					data4.map_id = map_id;
 					data4.x = x;
@@ -299,7 +299,7 @@ public:
 
 			}
 
-			if (PremPlayerLocQry){ TC_LOG_INFO("server.loading", "- Premium Player Locations Loaded:%u", PremiumPlayerLocations.size()); };
+			if (PremPlayerLocQry){ TC_LOG_INFO("server.loading", "- Premium Player Locations Loaded:%u", sPREM->PremiumPlayerLocations.size()); };
 
 			QueryResult PremTeamLocQry = WorldDatabase.Query("SELECT * FROM premium_team_teleports");
 
@@ -316,7 +316,7 @@ public:
 					float z = fields[4].GetFloat();
 					float o = fields[5].GetFloat();
 
-					PremiumTeamLocationElements& data5 = PremiumTeamLocations[team]; // like Lua table GWARZ[guild_id].entry
+					PremiumTeamLocationElements& data5 = sPREM->PremiumTeamLocations[team]; // like Lua table GWARZ[guild_id].entry
 					data5.team = team;
 					data5.map_id = map_id;
 					data5.x = x;
@@ -345,7 +345,7 @@ public:
 					float z = fields[4].GetFloat();
 					float o = fields[5].GetFloat();
 
-					PremiumLocationElements& data6 = PremiumPublicMallLocations[id]; // like Lua table GWARZ[guild_id].entry
+					PremiumLocationElements& data6 = sPREM->PremiumPublicMallLocations[id]; // like Lua table GWARZ[guild_id].entry
 					data6.id = id;
 					data6.map_id = map_id;
 					data6.x = x;
@@ -357,75 +357,10 @@ public:
 
 			}
 
-			TC_LOG_INFO("server.loading", "- Premium rank upgrade item id:%u", PREMIUM_UPGRADE_ITEM);
+			TC_LOG_INFO("server.loading", "- Premium rank upgrade item id:%u", sPREM->GetPremiumUgradeItem());
 			TC_LOG_INFO("server.loading", "______________________________________");
 		}
 };
-
-uint8 PREM::GetPremiumType()
-{
-	return PREMIUM_TYPE;
-}
-
-float PREM::GetPremiumModifier()
-{
-	return PREMIUM_MODIFIER;
-}
-
-bool PREM::IsPremiumTimed()
-{
-	return PREMIUM_TIMER_ENABLE != 0;
-}
-
-bool PREM::CanWaterBreathe()
-{
-	return PREMIUM_WATER_BREATHE != 0;
-}
-
-bool PREM::CanDecreaseSpellCost()
-{
-	return PREMIUM_SPELL_COST_DECREASE != 0;
-}
-
-uint64 PREM::GetPremiumDurationInSeconds()
-{
-	return PREMIUM_TIMER_DURATION;
-}
-
-uint32 PREM::GetPremiumDurationInDays()
-{
-	return ((((PREMIUM_TIMER_DURATION) / 60) / 60) / 24);
-}
-
-bool PREM::IsPremiumItemsEnabled()
-{
-	return PREMIUM_ITEMS_ENABLE != 0;
-}
-
-bool PREM::IsPremiumTalentPointBonusEnabled()
-{
-	return PREMIUM_TP_ENABLE != 0;
-}
-
-uint32 PREM::GetPremiumTalentPointBonus()
-{
-	return PREMIUM_TP_BONUS;
-}
-
-bool PREM::IsPremiumHealthPointBonusEnabled()
-{
-	return PREMIUM_HP_ENABLE != 0;
-}
-
-bool PREM::IsPremiumManaPointBonusEnabled()
-{
-	return PREMIUM_MANA_ENABLE != 0;
-}
-
-bool PREM::IsPremiumRagePointBonusEnabled()
-{
-	return PREMIUM_RAGE_ENABLE != 0;
-}
 
 // Player Functions
 
@@ -433,7 +368,7 @@ uint32 PREM::GetPlayerPremiumId(Player* player)
 {
 	uint32 id;
 
-		if (PREMIUM_TYPE == 0)
+		if (sPREM->GetPremiumType() == 0)
 		{
 			id = player->GetSession()->GetAccountId();
 		}
@@ -445,21 +380,16 @@ uint32 PREM::GetPlayerPremiumId(Player* player)
 	return id;
 }
 
-bool GetPremiumChatTeam()
-{
-		return PREMIUM_CHAT_TEAM != 0;
-}
-
 class Premium_Reset_Timer : public BasicEvent
 {
 public:
 	Premium_Reset_Timer(Player* player) : player(player)
 	{
-		uint32 id = PREM::GetPlayerPremiumId(player);
+		uint32 id = sPREM->GetPlayerPremiumId(player);
 
 		uint64 current_time = sWorld->GetGameTime();
-		uint64 player_premium_time = Premium[id].time;
-		uint64 duration = PREM::GetPremiumDurationInSeconds();
+		uint64 player_premium_time = sPREM->Premium[id].time;
+		uint64 duration = sPREM->GetPremiumDurationInSeconds();
 
 		uint64 cycle_duration = ((player_premium_time + duration) - current_time);
 		
@@ -472,7 +402,7 @@ public:
 		{
 			ChatHandler(player->GetSession()).PSendSysMessage("Your Premium rank has expired.");
 
-			PREM::UpdatePlayerPremiumValue(player, 0, 0);
+			sPREM->UpdatePlayerPremiumValue(player, 0, 0);
 		}
 		return true;
 	}
@@ -482,70 +412,56 @@ public:
 
 void PREM::AddPremiumToPlayer(Player* player)
 {
-	uint32 id = PREM::GetPlayerPremiumId(player);
-	uint32 maxPower = PREM::IncreaseValueWithModifier(player, Premium[id].power_max);
+	uint32 id = sPREM->GetPlayerPremiumId(player);
+	uint32 maxPower = sPREM->IncreaseValueWithModifier(player, sPREM->Premium[id].power_max);
 
-	if (PREMIUM_TITLE_ID > 0)
+	if (sPREM->GetPremiumTitleId())
 	{
-		if (!player->HasTitle(PREMIUM_TITLE_ID)){player->SetTitle(sCharTitlesStore.LookupEntry(PREMIUM_TITLE_ID), false); };
+		if (!player->HasTitle(sPREM->GetPremiumTitleId())){player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), false); };
 
-		player->SetUInt32Value(PLAYER_CHOSEN_TITLE, PREMIUM_TITLE_MASK_ID);
+		player->SetUInt32Value(PLAYER_CHOSEN_TITLE, sPREM->GetPremiumTitleId());
 	}
 
-	if (PREM::IsPremiumHealthPointBonusEnabled())
+	if (sPREM->IsPremiumHealthPointBonusEnabled())
 	{
-		uint32 MaxHP = PREM::IncreaseValueWithModifier(player, Premium[id].hp);
+		uint32 MaxHP = sPREM->IncreaseValueWithModifier(player, sPREM->Premium[id].hp);
 
 		player->SetMaxHealth(MaxHP);
 	}
 
-	if ((player->getPowerType() == POWER_MANA) && (PREM::IsPremiumManaPointBonusEnabled()))	{ player->SetMaxPower(POWER_MANA, maxPower); };
+	if ((player->getPowerType() == POWER_MANA) && (sPREM->IsPremiumManaPointBonusEnabled()))	{ player->SetMaxPower(POWER_MANA, maxPower); };
 
-	if ((player->getPowerType() == POWER_RAGE) && (PREM::IsPremiumRagePointBonusEnabled()))	{ player->SetMaxPower(POWER_RAGE, maxPower); };
+	if ((player->getPowerType() == POWER_RAGE) && (sPREM->IsPremiumRagePointBonusEnabled()))	{ player->SetMaxPower(POWER_RAGE, maxPower); };
 
 	ChatHandler(player->GetSession()).PSendSysMessage("player:PremiumRankAdded.");
 }
 
-bool PREM::DnDAppear(Player* player)
-{
-	uint32 id = PREM::GetPlayerPremiumId(player);
-
-	return Premium[id].dndappear;
-}
-
 void PREM::RemovePremiumFromPlayer(Player* player)
 {
-	uint32 id = PREM::GetPlayerPremiumId(player);
+	uint32 id = sPREM->GetPlayerPremiumId(player);
 
-	player->SetMaxHealth(Premium[id].hp);
+	player->SetMaxHealth(sPREM->Premium[id].hp);
 	player->ResetTalents(false);
 
-	if (PREMIUM_TITLE_ID > 0)
+	if (sPREM->GetPremiumTitleId() > 0)
 	{
-		if (player->GetUInt32Value(PLAYER_CHOSEN_TITLE) == PREMIUM_TITLE_MASK_ID){ player->SetUInt32Value(PLAYER_CHOSEN_TITLE, -1); };
+		if (player->GetUInt32Value(PLAYER_CHOSEN_TITLE) == sPREM->GetPremiumTitleMaskId()) { player->SetUInt32Value(PLAYER_CHOSEN_TITLE, -1); };
 	}
 
-	if (player->HasTitle(PREMIUM_TITLE_ID)){ player->SetTitle(sCharTitlesStore.LookupEntry(PREMIUM_TITLE_ID), true); };
+	if (player->HasTitle(sPREM->GetPremiumTitleId())){ player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), true); };
 
-	if ((player->getPowerType() == POWER_MANA) && (PREM::IsPremiumManaPointBonusEnabled()))	{ player->SetMaxPower(POWER_MANA, Premium[id].power_max); };
+	if ((player->getPowerType() == POWER_MANA) && (sPREM->IsPremiumManaPointBonusEnabled()))	{ player->SetMaxPower(POWER_MANA, sPREM->Premium[id].power_max); };
 
-	if ((player->getPowerType() == POWER_RAGE) && (PREM::IsPremiumRagePointBonusEnabled()))	{ player->SetMaxPower(POWER_RAGE, Premium[id].power_max); };
+	if ((player->getPowerType() == POWER_RAGE) && (sPREM->IsPremiumRagePointBonusEnabled()))	{ player->SetMaxPower(POWER_RAGE, sPREM->Premium[id].power_max); };
 
 	ChatHandler(player->GetSession()).PSendSysMessage("player:PremiumRankRemoved.");
-}
-
-bool PREM::IsPlayerPremium(Player* player)
-{
-	uint32 id = GetPlayerPremiumId(player);
-
-	return Premium[id].premium != 0;
 }
 
 void PREM::UpdatePlayerCustomHomeTeleport(uint32 guid, uint32 map_id, float x, float y, float z, float o)
 {
 	WorldDatabase.PExecute("REPLACE INTO `premium_player_teleports` SET guid=%u, `map_id`='%u', `x`='%f', `y`='%f', `z`='%f', `o`='%f';", guid, map_id, x, y, z, o);
 
-	PremiumPlayerLocationElements& data = PremiumPlayerLocations[guid];
+	PremiumPlayerLocationElements& data = sPREM->PremiumPlayerLocations[guid];
 	// Save the DB values to the MyData object
 	data.guid = guid;
 	data.map_id = map_id;
@@ -560,43 +476,36 @@ void PREM::UpdatePlayerPremiumValue(Player* player, uint8 value, uint64 time)
 {
 	uint32 id = GetPlayerPremiumId(player);
 
-	if (PREMIUM_TYPE == 0)
-	{
-		LoginDatabase.PExecute("UPDATE `account` SET `premium`='%u', `premium_time`='%u' WHERE id=%u;", value, time, id);
-	}
-	if (PREMIUM_TYPE > 0)
+	if (sPREM->GetPremiumType())
 	{
 		CharacterDatabase.PExecute("UPDATE `characters` SET `premium`='%u', `premium_time`='%u' WHERE guid=%u;", value, time, id);
+	}
+	else
+	{
+		LoginDatabase.PExecute("UPDATE `account` SET `premium`='%u', `premium_time`='%u' WHERE id=%u;", value, time, id);
 	}
 
 	if (value == 0)
 	{
-		Premium[id].premium = 0;
-		Premium[id].time = 0;
-		PREM::RemovePremiumFromPlayer(player);
+		sPREM->Premium[id].premium = 0;
+		sPREM->Premium[id].time = 0;
+		sPREM->RemovePremiumFromPlayer(player);
 	}
 
 	if (value > 0)
 	{
-		Premium[id].premium = 1;
-		Premium[id].time = time;
-		PREM::AddPremiumToPlayer(player);
+		sPREM->Premium[id].premium = 1;
+		sPREM->Premium[id].time = time;
+		sPREM->AddPremiumToPlayer(player);
 	}
-}
-
-uint64 PREM::GetPlayerPremiumStartTimeInSeconds(Player* player)
-{
-	uint32 id = PREM::GetPlayerPremiumId(player);
-
-	return Premium[id].time;
 }
 
 uint64 PREM::GetPlayerPremiumRemainingTimeInSeconds(Player* player)
 {
-	uint32 id = PREM::GetPlayerPremiumId(player);
-	uint64 duration = PREM::GetPremiumDurationInSeconds();
+	uint32 id = sPREM->GetPlayerPremiumId(player);
+	uint64 duration = sPREM->GetPremiumDurationInSeconds();
 	uint64 current_time = sWorld->GetGameTime();
-	uint64 player_time = Premium[id].time;
+	uint64 player_time = sPREM->Premium[id].time;
 	uint64 remaining_time = 0;
 
 	remaining_time = ((player_time + duration) - current_time);
@@ -606,7 +515,7 @@ uint64 PREM::GetPlayerPremiumRemainingTimeInSeconds(Player* player)
 
 std::string PREM::GetPlayerPremiumTimeLeftInString(Player* player)
 {
-	uint64 remaining = PREM::GetPlayerPremiumRemainingTimeInSeconds(player);
+	uint64 remaining = sPREM->GetPlayerPremiumRemainingTimeInSeconds(player);
 	uint64 tmp;
 	std::string output = "";
 
@@ -614,53 +523,46 @@ std::string PREM::GetPlayerPremiumTimeLeftInString(Player* player)
 	{
 		tmp = floor(remaining / 2592000); //  (((((remaining / 1000) / 60) / 60) / 24) / 30);
 		remaining = remaining - (tmp * 2592000);
-		output = output + PREM::ConvertNumberToString(tmp) + " Months, ";
+		output = output + sPREM->ConvertNumberToString(tmp) + " Months, ";
 	}
 
 	if (remaining >= 86400)
 	{
 		tmp = floor(remaining / 86400); //  ((((remaining / 1000) / 60) / 60) / 24);
 		remaining = remaining - (tmp * 86400);
-		output = output + PREM::ConvertNumberToString(tmp) + " Days, ";
+		output = output + sPREM->ConvertNumberToString(tmp) + " Days, ";
 	}
 
 	if (remaining >= 3600)
 	{
 		tmp = floor(remaining / 3600); //  (((remaining / 1000) / 60) / 60);
 		remaining = remaining - (tmp * 3600);
-		output = output + PREM::ConvertNumberToString(tmp) + " Hours, ";
+		output = output + sPREM->ConvertNumberToString(tmp) + " Hours, ";
 	}
 
 	if (remaining >= 60)
 	{
 		tmp = floor(remaining / 60); //  ((remaining / 1000) / 60);
 		remaining = remaining - (tmp * 60);
-		output = output + PREM::ConvertNumberToString(tmp) + " Minutes, ";
+		output = output + sPREM->ConvertNumberToString(tmp) + " Minutes, ";
 	}
 
 	if (remaining < 60)
 	{
 		tmp = (remaining / 1);
 		remaining = remaining - (tmp * 1);
-		output = output + PREM::ConvertNumberToString(tmp) + " Seconds";
+		output = output + sPREM->ConvertNumberToString(tmp) + " Seconds";
 	}
 	return output;
-}
-
-uint32 PREM::GetPlayerPremiumTimeInDays(Player* player)
-{
-	uint32 id = PREM::GetPlayerPremiumId(player);
-
-	return (((Premium[id].time / 60) / 60) / 24);
 }
 
 void PREM::DepositGoldToPlayerGuildBank(Player* player, uint32 amount)
 {
 		Guild* guild = player->GetGuild();
 
-		uint32 Deposit_Amount = ceil(amount * PREM::GetPremiumModifier());
+		uint32 Deposit_Amount = ceil(amount * sPREM->GetPremiumModifier());
 
-		std::string money = PREM::GetAmountInString(Deposit_Amount);
+		std::string money = sPREM->GetAmountInString(Deposit_Amount);
 
 		guild->HandleMemberDepositMoney(player->GetSession(), Deposit_Amount);
 
@@ -671,18 +573,18 @@ void PREM::DepositGoldToPlayerGuildBank(Player* player, uint32 amount)
 
 uint32 PREM::IncreaseValueWithModifier(Player* player, uint32 value)
 {
-	if (PREM::IsPlayerPremium(player))
+	if (sPREM->IsPlayerPremium(player))
 	{
-		value += ceil(value * PREM::GetPremiumModifier());
+		value += ceil(value * sPREM->GetPremiumModifier());
 	}
 	return value;
 }
 
 uint32 PREM::DecreaseValueWithModifier(Player* player, uint32 value)
 {
-	if (PREM::IsPlayerPremium(player))
+	if (sPREM->IsPlayerPremium(player))
 	{
-		value -= ceil(value * PREM::GetPremiumModifier());
+		value -= ceil(value * sPREM->GetPremiumModifier());
 	}
 	return value;
 }
@@ -697,9 +599,9 @@ void SendPremiumMessage(std::string msg, uint8 team_id)
 				continue;
 
 		Player *player = itr->second->GetPlayer();
-		bool IsPlayerPremium = PREM::IsPlayerPremium(player);
+		bool IsPlayerPremium = sPREM->IsPlayerPremium(player);
 
-			if ((player->IsGameMaster()) || (IsPlayerPremium && ((player->GetTeamId() == team_id) || ((player->GetTeamId() != team_id) && ((GetPremiumChatTeam()) || team_id == 2)))))
+			if ((player->IsGameMaster()) || (IsPlayerPremium && ((player->GetTeamId() == team_id) || ((player->GetTeamId() != team_id) && ((sPREM->GetPremiumChatTeam()) || team_id == 2)))))
 			{
 				ChatHandler(player->GetSession()).PSendSysMessage(msg.c_str());
 			}
@@ -718,12 +620,12 @@ public:
 
 		if (healer_player)
 		{
-			gain = PREM::IncreaseValueWithModifier(healer_player, gain);
+			gain = sPREM->IncreaseValueWithModifier(healer_player, gain);
 		}
 
 		if (target_player)
 		{
-			gain = PREM::IncreaseValueWithModifier(target_player, gain);
+			gain = sPREM->IncreaseValueWithModifier(target_player, gain);
 		}
 	}
 
@@ -734,12 +636,12 @@ public:
 
 		if (attacking_player)
 		{
-			damage = PREM::IncreaseValueWithModifier(attacking_player, damage);
+			damage = sPREM->IncreaseValueWithModifier(attacking_player, damage);
 		}
 
 		if (target_player)
 		{
-			damage = PREM::DecreaseValueWithModifier(target_player, damage);
+			damage = sPREM->DecreaseValueWithModifier(target_player, damage);
 		}
 	}
 
@@ -750,12 +652,12 @@ public:
 
 		if (attacking_player)
 		{
-			damage = PREM::IncreaseValueWithModifier(attacking_player, damage);
+			damage = sPREM->IncreaseValueWithModifier(attacking_player, damage);
 		}
 
 		if (target_player)
 		{
-			damage = PREM::DecreaseValueWithModifier(target_player, damage);
+			damage = sPREM->DecreaseValueWithModifier(target_player, damage);
 		}
 	}
 
@@ -766,12 +668,12 @@ public:
 
 		if (attacking_player)
 		{
-			damage = PREM::IncreaseValueWithModifier(attacking_player, damage);
+			damage = sPREM->IncreaseValueWithModifier(attacking_player, damage);
 		}
 
 		if (target_player)
 		{
-			damage = PREM::DecreaseValueWithModifier(target_player, damage);
+			damage = sPREM->DecreaseValueWithModifier(target_player, damage);
 		}
 	}
 };
@@ -783,20 +685,20 @@ public:
 
 		virtual void OnLogout(Player* player)
 		{
-			PREM::RemovePremiumFromPlayer(player);
+			sPREM->RemovePremiumFromPlayer(player);
 
-			uint32 id = PREM::GetPlayerPremiumId(player);
+			uint32 id = sPREM->GetPlayerPremiumId(player);
 
-			Premium.erase(id);
+			sPREM->Premium.erase(id);
 		};
 
 		virtual void OnLogin(Player* player, bool /*firstLogin*/)
 		{
-			uint32 id = PREM::GetPlayerPremiumId(player);
+			uint32 id = sPREM->GetPlayerPremiumId(player);
 
 			QueryResult PremiumQery;
 			
-				if (PREM::GetPremiumType() == 0)
+				if (sPREM->GetPremiumType() == 0)
 				{ 
 					PremiumQery = LoginDatabase.PQuery("SELECT premium, premium_time FROM account WHERE id=%u;", id);
 				}
@@ -811,7 +713,7 @@ public:
 					uint8 premium = fields[0].GetUInt8();
 					uint32 premium_time = fields[1].GetUInt64();
 
-					PremiumElements& data = Premium[id];
+					PremiumElements& data = sPREM->Premium[id];
 					// Save the values to the Data object. Build the players unordered_map table.
 					data.id = id;
 					data.premium = premium;
@@ -823,7 +725,7 @@ public:
 				}
 				else
 				{
-					if (PREM::GetPremiumType() == 0)
+					if (sPREM->GetPremiumType() == 0)
 					{ 
 						TC_LOG_INFO("server.loading", "PREMIUM_LOAD_ERROR ID:%u", id); 
 					}
@@ -833,23 +735,23 @@ public:
 					}
 				}
 
-				if (PREM::IsPlayerPremium(player))
+				if (sPREM->IsPlayerPremium(player))
 				{
 					ChatHandler(player->GetSession()).PSendSysMessage("Greetings %s. You are ranked Premium.", player->GetName());
 
-					PREM::AddPremiumToPlayer(player);
+					sPREM->AddPremiumToPlayer(player);
 				}
 				else
 				{
 					ChatHandler(player->GetSession()).PSendSysMessage("Greetings %s.You can donate to recieve the Premium rank.", player->GetName());
 	
-					PREM::RemovePremiumFromPlayer(player);
+					sPREM->RemovePremiumFromPlayer(player);
 				}
 		} // On Login
 
 		virtual void OnDuelEnd(Player* killer, Player* victim, DuelCompleteType /*type*/)
 		{ // idea from Kaev
-			if (PREM::IsPlayerPremium(killer))
+			if (sPREM->IsPlayerPremium(killer))
 			{
 				killer->SetHealth(killer->GetMaxHealth());
 
@@ -861,7 +763,7 @@ public:
 					}
 			}
 
-			if (PREM::IsPlayerPremium(victim))
+			if (sPREM->IsPlayerPremium(victim))
 			{
 				victim->SetHealth(victim->GetMaxHealth());
 
@@ -877,7 +779,7 @@ public:
 		virtual void OnChat(Player* player, uint32 type, uint32 lang, std::string& msg)
 		{
 			uint64 current_time = sWorld->GetGameTime();
-			uint32 id = PREM::GetPlayerPremiumId(player);
+			uint32 id = sPREM->GetPlayerPremiumId(player);
 			std::string PCMSG = "";
 
 			std::string ChannelColor = "|cff808080";
@@ -885,21 +787,21 @@ public:
 
 			if (player->IsGameMaster()) // here we will set the gm's stored values so they clear the checks.
 			{
-				Premium[id].time = current_time - PREMIUM_CHAT_DELAY;
-				Premium[id].last_message = "";
+				sPREM->Premium[id].time = current_time - sPREM->SetPremiumChatDelay();
+				sPREM->Premium[id].last_message = "";
 			}
 
-			if ((msg != "") && (lang != LANG_ADDON) && (msg != "Away") && (player->CanSpeak() == true) && (Premium[id].chat == 1))
+			if ((msg != "") && (lang != LANG_ADDON) && (msg != "Away") && (player->CanSpeak() == true) && (sPREM->Premium[id].chat == 1))
 			{
 
-				if ((current_time < (Premium[id].time + PREMIUM_CHAT_DELAY)) || (Premium[id].last_message == msg))
+				if ((current_time < (sPREM->Premium[id].time + sPREM->SetPremiumChatDelay())) || (sPREM->Premium[id].last_message == msg))
 				{
 					ChatHandler(player->GetSession()).PSendSysMessage("-Spam detect triggered-");
 				}
 				else
 				{
-					Premium[id].last_message = msg;
-					Premium[id].time = current_time;
+					sPREM->Premium[id].last_message = msg;
+					sPREM->Premium[id].time = current_time;
 					uint8 team_id = player->GetTeamId();
 
 					PCMSG += "[" + ChannelColor + "Premium|r][" + TeamColor[team_id] + player->GetName() + "|r]";
@@ -921,35 +823,23 @@ public:
 
 		virtual void OnGiveXP(Player* player, uint32& amount, Unit* /*victim*/) 
 		{
-			amount = PREM::IncreaseValueWithModifier(player, amount);
+			amount = sPREM->IncreaseValueWithModifier(player, amount);
 		}
 
 		virtual void OnReputationChange(Player* player, uint32 /*factionId*/, int32& standing, bool /*incremental*/)
 		{
-			standing = PREM::IncreaseValueWithModifier(player, standing);
+			standing = sPREM->IncreaseValueWithModifier(player, standing);
 		}
 };
 
 // Item Functions
 
-void RemoveItem(uint32 id, Player* player)
-{
-	player->DestroyItemCount(uint32(id), 1, true);
-}
-
-bool PREM::IsItemPremium(Item* item)
-{
-	uint32 id = item->GetEntry();
-
-	if (!PremiumItem[id].premium){ PremiumItem[id].premium = 0; };
-
-	return PremiumItem[id].premium != 0;
-}
+void RemoveItem(uint32 id, Player* player){	player->DestroyItemCount(uint32(id), 1, true);}
 
 void PREM::UpdateItemPremiumValue(uint32 item_id, uint8 value)
 {
 	WorldDatabase.PExecute("UPDATE `item_template` SET `premium`='%u' WHERE `entry`=%u;", value, item_id);
-	PremiumItem[item_id].premium = value;
+	sPREM->PremiumItem[item_id].premium = value;
 }
 
 class Premium_Coin_Script : public ItemScript
@@ -959,11 +849,11 @@ public:
 
 		virtual bool OnUse(Player* player, Item* item, SpellCastTargets const& targets)
 		{
-			uint32 id = PREM::GetPlayerPremiumId(player);
+			uint32 id = sPREM->GetPlayerPremiumId(player);
 
-				if (PREM::IsPlayerPremium(player))  // i may just remove this and let players update while they still are Premium ranked.
+				if (sPREM->IsPlayerPremium(player))  // i may just remove this and let players update while they still are Premium ranked.
 				{
-					std::string output = PREM::GetPlayerPremiumTimeLeftInString(player);
+					std::string output = sPREM->GetPlayerPremiumTimeLeftInString(player);
 
 					ChatHandler(player->GetSession()).PSendSysMessage("You allready have the Premium rank.");
 
@@ -974,13 +864,13 @@ public:
 				{
 					RemoveItem(item->GetEntry(), player);
 
-					PREM::UpdatePlayerPremiumValue(player, 1, sWorld->GetGameTime());
+					sPREM->UpdatePlayerPremiumValue(player, 1, sWorld->GetGameTime());
 
 					ChatHandler(player->GetSession()).PSendSysMessage("Congratulations. You have been awarded the Premium Rank.");
 
-					if (PREM::IsPremiumTimed())	
+					if (sPREM->IsPremiumTimed())
 					{ 
-						std::string output = PREM::GetPlayerPremiumTimeLeftInString(player);
+						std::string output = sPREM->GetPlayerPremiumTimeLeftInString(player);
 
 						ChatHandler(player->GetSession()).PSendSysMessage("Your Premium Rank will expire in %s days.", output.c_str());
 					}
@@ -1042,7 +932,7 @@ bool CheckIfPlayerInCombatOrDead(Player* player)
 
 void TeleportPlayer(Player* player, uint8 id)
 {
-	bool IsPrem = PREM::IsPlayerPremium(player);
+	bool IsPrem = sPREM->IsPlayerPremium(player);
 	auto team_id = player->GetTeamId();
 	uint32 guid = player->GetGUID();
 
@@ -1057,31 +947,31 @@ void TeleportPlayer(Player* player, uint8 id)
 			switch (id)
 			{
 				case(1) :
-					if (PremiumLocations.size() != 2)
+					if (sPREM->PremiumLocations.size() != 2)
 					{
 						ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
 					}
 					else
 					{
-						player->TeleportTo(PremiumLocations[team_id].map_id, PremiumLocations[team_id].x, PremiumLocations[team_id].y, PremiumLocations[team_id].z, PremiumLocations[team_id].o);
+						player->TeleportTo(sPREM->PremiumLocations[team_id].map_id, sPREM->PremiumLocations[team_id].x, sPREM->PremiumLocations[team_id].y, sPREM->PremiumLocations[team_id].z, sPREM->PremiumLocations[team_id].o);
 					}
 				break;
 
 				case(2) :
-					if (PremiumMallLocations.size() != 2)
+					if (sPREM->PremiumMallLocations.size() != 2)
 					{
 						ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
 					}
 					else
 					{
-						player->TeleportTo(PremiumMallLocations[team_id].map_id, PremiumMallLocations[team_id].x, PremiumMallLocations[team_id].y, PremiumMallLocations[team_id].z, PremiumMallLocations[team_id].o);
+						player->TeleportTo(sPREM->PremiumMallLocations[team_id].map_id, sPREM->PremiumMallLocations[team_id].x, sPREM->PremiumMallLocations[team_id].y, sPREM->PremiumMallLocations[team_id].z, sPREM->PremiumMallLocations[team_id].o);
 					}
 				break;
 
 				case(3) :
-					if (PremiumPlayerLocations[guid].guid != 0)  // player customizable home gps.
+					if (sPREM->PremiumPlayerLocations[guid].guid != 0)  // player customizable home gps.
 					{
-						player->TeleportTo(PremiumPlayerLocations[guid].map_id, PremiumPlayerLocations[guid].x, PremiumPlayerLocations[guid].y, PremiumPlayerLocations[guid].z, PremiumPlayerLocations[guid].o);
+						player->TeleportTo(sPREM->PremiumPlayerLocations[guid].map_id, sPREM->PremiumPlayerLocations[guid].x, sPREM->PremiumPlayerLocations[guid].y, sPREM->PremiumPlayerLocations[guid].z, sPREM->PremiumPlayerLocations[guid].o);
 					}
 					else
 					{
@@ -1090,24 +980,24 @@ void TeleportPlayer(Player* player, uint8 id)
 				break;
 
 				case(4) :
-					if (PremiumTeamLocations.size() != 2)
+					if (sPREM->PremiumTeamLocations.size() != 2)
 					{
 						ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
 					}
 					else
 					{
-						player->TeleportTo(PremiumTeamLocations[team_id].map_id, PremiumTeamLocations[team_id].x, PremiumTeamLocations[team_id].y, PremiumTeamLocations[team_id].z, PremiumTeamLocations[team_id].o);
+						player->TeleportTo(sPREM->PremiumTeamLocations[team_id].map_id, sPREM->PremiumTeamLocations[team_id].x, sPREM->PremiumTeamLocations[team_id].y, sPREM->PremiumTeamLocations[team_id].z, sPREM->PremiumTeamLocations[team_id].o);
 					}
 				break;
 
 				case(5) :
-					if (PremiumPublicMallLocations.size() != 2)
+					if (sPREM->PremiumPublicMallLocations.size() != 2)
 					{
 						ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
 					}
 					else
 					{
-						player->TeleportTo(PremiumPublicMallLocations[team_id].map_id, PremiumPublicMallLocations[team_id].x, PremiumPublicMallLocations[team_id].y, PremiumPublicMallLocations[team_id].z, PremiumPublicMallLocations[team_id].o);
+						player->TeleportTo(sPREM->PremiumPublicMallLocations[team_id].map_id, sPREM->PremiumPublicMallLocations[team_id].x, sPREM->PremiumPublicMallLocations[team_id].y, sPREM->PremiumPublicMallLocations[team_id].z, sPREM->PremiumPublicMallLocations[team_id].o);
 					}
 				break;
 			}
@@ -1246,9 +1136,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
@@ -1268,7 +1157,7 @@ public:
 
 		bool return_type;
 
-		if (PREM::IsPlayerPremium(player))
+		if (sPREM->IsPlayerPremium(player))
 		{
 			for (uint8 i = 0; i < sizeof(BUFFS) / sizeof(*BUFFS); i++)
 			{
@@ -1291,7 +1180,7 @@ public:
 
 		bool return_type;
 
-		if (!PREM::IsPlayerPremium(player))
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
@@ -1301,7 +1190,7 @@ public:
 			player->ResetTalents(true);
 
 			uint32 tp = player->GetFreeTalentPoints();
-			uint32 extratp = PREM::GetPremiumTalentPointBonus();
+			uint32 extratp = sPREM->GetPremiumTalentPointBonus();
 
 			player->SetFreeTalentPoints(tp + extratp);
 
@@ -1321,9 +1210,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1348,9 +1236,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1373,9 +1260,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1398,9 +1284,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
@@ -1420,9 +1305,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
@@ -1441,9 +1325,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
@@ -1465,9 +1348,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem || !player->IsGameMaster())
+		if (!sPREM->IsPlayerPremium(player) || !player->IsGameMaster())
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1475,10 +1357,10 @@ public:
 		}
 		else
 		{
-			uint32 id = PREM::GetPlayerPremiumId(player);
+			uint32 id = sPREM->GetPlayerPremiumId(player);
 
-			Premium[id].chat = true;
-			Premium[id].chat_time = sWorld->GetGameTime() - PREMIUM_CHAT_DELAY;
+			sPREM->Premium[id].chat = true;
+			sPREM->Premium[id].chat_time = sWorld->GetGameTime() - sPREM->SetPremiumChatDelay();
 
 			ChatHandler(player->GetSession()).PSendSysMessage("Premium Chat on.");
 			ChatHandler(player->GetSession()).PSendSysMessage("now switch to `/s` and chat away.");
@@ -1493,9 +1375,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem || !player->IsGameMaster())
+		if (!sPREM->IsPlayerPremium(player) || !player->IsGameMaster())
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1503,9 +1384,9 @@ public:
 		}
 		else
 		{
-			uint32 id = PREM::GetPlayerPremiumId(player);
+			uint32 id = sPREM->GetPlayerPremiumId(player);
 
-			Premium[id].chat = false;
+			sPREM->Premium[id].chat = false;
 
 			ChatHandler(player->GetSession()).PSendSysMessage("Premium Chat off.");
 
@@ -1520,9 +1401,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
@@ -1540,9 +1420,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
@@ -1561,9 +1440,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
@@ -1583,16 +1461,15 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
 		}
 		else
 		{
-			if (PREMIUM_TITLE_ID == 0)
+			if (sPREM->GetPremiumTitleId() == 0)
 			{
 				handler->PSendSysMessage("The Admin hasn't added a custom title yet.");
 	
@@ -1600,9 +1477,9 @@ public:
 			}
 			else
 			{
-				if (!player->HasTitle(PREMIUM_TITLE_ID)){ player->SetTitle(sCharTitlesStore.LookupEntry(PREMIUM_TITLE_ID), false); };
+				if (!player->HasTitle(sPREM->GetPremiumTitleId())){ player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), false); };
 
-				player->SetUInt32Value(PLAYER_CHOSEN_TITLE, PREMIUM_TITLE_MASK_ID);
+				player->SetUInt32Value(PLAYER_CHOSEN_TITLE, sPREM->GetPremiumTitleMaskId());
 
 				return_type = true;
 			}
@@ -1615,9 +1492,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1625,7 +1501,7 @@ public:
 		}
 		else
 		{
-			if (PREMIUM_TITLE_ID == 0)
+			if (sPREM->GetPremiumTitleId() == 0)
 			{
 				handler->PSendSysMessage("The Admin hasn't added a custom title yet.");
 
@@ -1645,7 +1521,6 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 		uint8 pClass = player->getClass();
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
 		ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(pClass);
 
@@ -1702,9 +1577,8 @@ public:
 		uint8 pClass = player->getClass();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1723,9 +1597,8 @@ public:
 		uint8 pClass = player->getClass();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1744,9 +1617,8 @@ public:
 		uint8 pClass = player->getClass();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1765,7 +1637,7 @@ public:
 
 			Player *target = itr->second->GetPlayer();
 
-				if (PREM::IsPlayerPremium(target))
+				if (sPREM->IsPlayerPremium(target))
 				{
 					ChatHandler(player->GetSession()).PSendSysMessage("%s, ", target->GetName().c_str());
 				}
@@ -1779,9 +1651,8 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 		uint8 pClass = player->getClass();
 
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1799,7 +1670,7 @@ public:
 			if (!target)
 				return false;
 
-			bool check = PREM::DnDAppear(target);
+			bool check = sPREM->DnDAppear(target);
 
 			if (!check)
 			{
@@ -1855,10 +1726,9 @@ public:
 		uint8 pClass = player->getClass();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
-		uint32 id = PREM::GetPlayerPremiumId(player);
+		uint32 id = sPREM->GetPlayerPremiumId(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1866,7 +1736,7 @@ public:
 		}
 		else
 		{
-			Premium[id].dndappear = false;
+			sPREM->Premium[id].dndappear = false;
 
 			ChatHandler(player->GetSession()).PSendSysMessage("You have allowed other Premiums to appear to you.");
 		}
@@ -1879,10 +1749,9 @@ public:
 		uint8 pClass = player->getClass();
 
 		bool return_type;
-		bool IsPrem = PREM::IsPlayerPremium(player);
-		uint32 id = PREM::GetPlayerPremiumId(player);
+		uint32 id = sPREM->GetPlayerPremiumId(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1890,7 +1759,7 @@ public:
 		}
 		else
 		{
-			Premium[id].dndappear = true;
+			sPREM->Premium[id].dndappear = true;
 
 			ChatHandler(player->GetSession()).PSendSysMessage("You have blocked other Premiums from appearing to you.");
 		}
@@ -1905,11 +1774,11 @@ public:
 		Player* target = player->GetSelectedPlayer();
 		uint64 game_time = sWorld->GetGameTime();
 
-		if (player->GetSession()->GetSecurity() >= PREMIUM_GM_MINIMUM_RANK)
+		if (player->GetSession()->GetSecurity() >= sPREM->GetGMMinimumRank())
 		{
 			if (target)
 			{
-				PREM::UpdatePlayerPremiumValue(target, 1, game_time);
+				sPREM->UpdatePlayerPremiumValue(target, 1, game_time);
 
 				ChatHandler(player->GetSession()).PSendSysMessage("You have added the Premium rank to %s.", target->GetName().c_str());
 			}
@@ -1928,11 +1797,11 @@ public:
 		uint64 game_time = sWorld->GetGameTime();
 		std::string arg = args;
 
-		if (player->GetSession()->GetSecurity() >= PREMIUM_GM_MINIMUM_RANK)
+		if (player->GetSession()->GetSecurity() >= sPREM->GetGMMinimumRank())
 		{
 			if (target)
 			{
-				PREM::UpdatePlayerPremiumValue(target, 0, 0);
+				sPREM->UpdatePlayerPremiumValue(target, 0, 0);
 
 				ChatHandler(player->GetSession()).PSendSysMessage("You have removed %s`s Premium rank.", target->GetName().c_str());
 			}
@@ -1951,12 +1820,12 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 		std::string arg = args;
 
-		if (player->GetSession()->GetSecurity() >= PREMIUM_GM_MINIMUM_RANK)
+		if (player->GetSession()->GetSecurity() >= sPREM->GetGMMinimumRank())
 		{
 			if (arg != "")
 			{
-				PREM::UpdateItemPremiumValue(PREM::ConvertStringToNumber(arg), 1);
-				ChatHandler(player->GetSession()).PSendSysMessage("Item %u set to %u", PREM::ConvertStringToNumber(arg), 1);
+				sPREM->UpdateItemPremiumValue(sPREM->ConvertStringToNumber(arg), 1);
+				ChatHandler(player->GetSession()).PSendSysMessage("Item %u set to %u", sPREM->ConvertStringToNumber(arg), 1);
 			}
 			else
 			{
@@ -1971,12 +1840,12 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 		std::string arg = args;
 
-		if (player->GetSession()->GetSecurity() >= PREMIUM_GM_MINIMUM_RANK)
+		if (player->GetSession()->GetSecurity() >= sPREM->GetGMMinimumRank())
 		{
 			if (arg != "")
 			{
-				PREM::UpdateItemPremiumValue(PREM::ConvertStringToNumber(arg), 0);
-				ChatHandler(player->GetSession()).PSendSysMessage("Item %u set to %u", PREM::ConvertStringToNumber(arg), 0);
+				sPREM->UpdateItemPremiumValue(sPREM->ConvertStringToNumber(arg), 0);
+				ChatHandler(player->GetSession()).PSendSysMessage("Item %u set to %u", sPREM->ConvertStringToNumber(arg), 0);
 			}
 			else
 			{
@@ -2040,16 +1909,15 @@ public:
 		Player* player = handler->GetSession()->GetPlayer();
 
 		bool return_type = true;
-		bool IsPrem = PREM::IsPlayerPremium(player);
 
-		if (!IsPrem)
+		if (!sPREM->IsPlayerPremium(player))
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 			return_type = false;
 		}
 		else
 		{
-			PREM::UpdatePlayerCustomHomeTeleport(player->GetGUID(), player->GetMapId(), player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation());
+			sPREM->UpdatePlayerCustomHomeTeleport(player->GetGUID(), player->GetMapId(), player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation());
 
 			handler->PSendSysMessage("Location set.");
 		}
