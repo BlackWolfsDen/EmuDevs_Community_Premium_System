@@ -36,6 +36,7 @@
 #include "Item.h"
 #include "Language.h"
 #include "Log.h"
+#include "MapManager.h"
 #include "player.h"
 #include "Pet.h"
 #include "Premium_System.h"
@@ -845,7 +846,7 @@ public:
 
 // Item Functions
 
-void RemoveItem(uint32 id, Player* player){	player->DestroyItemCount(uint32(id), 1, true);}
+void PREM::RemoveItem(uint32 id, Player* player){	player->DestroyItemCount(uint32(id), 1, true);}
 
 void PREM::UpdateItemPremiumValue(uint32 item_id, uint8 value)
 {
@@ -873,7 +874,7 @@ public:
 				}
 				else
 				{
-					RemoveItem(item->GetEntry(), player);
+					sPREM->RemoveItem(item->GetEntry(), player);
 
 					sPREM->UpdatePlayerPremiumValue(player, 1, GameTime::GetGameTime());
 
@@ -892,7 +893,7 @@ public:
 
 // Commands
 
-bool CheckIfPlayerInCombatOrDead(Player* player)
+bool PREM::CheckIfPlayerInCombatOrDead(Player* player)
 {
 
 	bool return_type = true;
@@ -941,7 +942,7 @@ bool CheckIfPlayerInCombatOrDead(Player* player)
 	return return_type;
 }
 
-void TeleportPlayer(Player* player, uint8 id)
+void PREM::TeleportPlayer(Player* player, uint8 id)
 {
 	bool IsPrem = sPREM->IsPlayerPremium(player);
 	auto team_id = player->GetTeamId();
@@ -1872,7 +1873,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 1);
+		sPREM->TeleportPlayer(player, 1);
 
 		return true;
 	}
@@ -1881,7 +1882,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 2);
+		sPREM->TeleportPlayer(player, 2);
 
 		return true;
 	}
@@ -1890,7 +1891,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 3);
+		sPREM->TeleportPlayer(player, 3);
 
 		return true;
 	}
@@ -1899,7 +1900,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 4);
+		sPREM->TeleportPlayer(player, 4);
 
 		return true;
 	}
@@ -1908,7 +1909,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 5);
+		sPREM->TeleportPlayer(player, 5);
 
 		return true;
 	}
@@ -1939,9 +1940,9 @@ public:
 
 void AddSC_Premium_System()
 {
-	new PREMIUM_Load_Conf;
-	new Unit_Premium_Engine;
-	new Player_Premium_Engine;
-	new Premium_Coin_Script;
-	new Premium_Commands;
+	new PREMIUM_Load_Conf();
+	new Unit_Premium_Engine();
+	new Player_Premium_Engine();
+	new Premium_Coin_Script();
+	new Premium_Commands();
 }
