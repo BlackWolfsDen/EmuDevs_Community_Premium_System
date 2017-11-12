@@ -1,7 +1,7 @@
 /*
-			© EmuDev's Premium System ©
+			Â© EmuDev's Premium System Â©
 
-	By Grumbo / slp13at420 `The Mad Scientist` of EmuDevs.com ©
+	By Grumbo / slp13at420 `The Mad Scientist` of EmuDevs.com Â©
 	with the community of EmuDevs.com,
 	for the community of EmuDevs.com.
 
@@ -21,25 +21,36 @@
 	allows for permenant Premium rank 
 	or timed based duration Premium rank.
 
-	© This is an EmuDevs.com only release. ©
-	© do not remove or change credits above ©
-	© dont share this System without prior approval ©
-	© Dont re-release as yours or anothers work ©
+	Â© This is an EmuDevs.com only release. Â©
+	Â© do not remove or change credits above Â©
+	Â© dont share this System without prior approval Â©
+	Â© Dont re-release as yours or anothers work Â©
 */
 
+#include "AchievementMgr.h"
 #include "chat.h"
 #include "Config.h"
+#include "DatabaseEnv.h"
+#include "GameTime.h"
 #include "Guild.h"
+#include "Item.h"
 #include "Language.h"
+#include "Log.h"
 #include "player.h"
 #include "Pet.h"
-#include "RBAC.h"
 #include "Premium_System.h"
+#include "RBAC.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"
 #include "SpellInfo.h"
 #include "Unit.h"
 #include "World.h"
+#include "WorldSession.h"
+
+// #include "WorldPacket.h"
+// #include "DBCEnums.h"
+// #include "GridNotifiersImpl.h"
+// #include "ReputationMgr.h"
 
 int BUFFS[24] = { 24752, 48074, 43223, 36880, 467, 48469, 48162, 48170, 16877, 10220, 13033, 11735, 10952, 23948, 26662, 47440, 53307, 132, 23737, 48470, 43002, 26393, 24705, 69994 };
 int DEBUFFS[4] = { 57724, 57723, 80354, 95809 };
@@ -387,7 +398,7 @@ public:
 	{
 		uint32 id = sPREM->GetPlayerPremiumId(player);
 
-		uint64 current_time = sWorld->GetGameTime();
+		uint64 current_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 		uint64 player_premium_time = sPREM->Premium[id].time;
 		uint64 duration = sPREM->GetPremiumDurationInSeconds();
 
@@ -504,7 +515,7 @@ uint64 PREM::GetPlayerPremiumRemainingTimeInSeconds(Player* player)
 {
 	uint32 id = sPREM->GetPlayerPremiumId(player);
 	uint64 duration = sPREM->GetPremiumDurationInSeconds();
-	uint64 current_time = sWorld->GetGameTime();
+	uint64 current_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 	uint64 player_time = sPREM->Premium[id].time;
 	uint64 remaining_time = 0;
 
@@ -778,7 +789,7 @@ public:
 
 		virtual void OnChat(Player* player, uint32 type, uint32 lang, std::string& msg)
 		{
-			uint64 current_time = sWorld->GetGameTime();
+			uint64 current_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 			uint32 id = sPREM->GetPlayerPremiumId(player);
 			std::string PCMSG = "";
 
@@ -864,7 +875,7 @@ public:
 				{
 					RemoveItem(item->GetEntry(), player);
 
-					sPREM->UpdatePlayerPremiumValue(player, 1, sWorld->GetGameTime());
+					sPREM->UpdatePlayerPremiumValue(player, 1, GameTime::GetGameTime());
 
 					ChatHandler(player->GetSession()).PSendSysMessage("Congratulations. You have been awarded the Premium Rank.");
 
@@ -1360,7 +1371,7 @@ public:
 			uint32 id = sPREM->GetPlayerPremiumId(player);
 
 			sPREM->Premium[id].chat = true;
-			sPREM->Premium[id].chat_time = sWorld->GetGameTime() - sPREM->SetPremiumChatDelay();
+			sPREM->Premium[id].chat_time = GameTime::GetGameTime() - sPREM->SetPremiumChatDelay();
 
 			ChatHandler(player->GetSession()).PSendSysMessage("Premium Chat on.");
 			ChatHandler(player->GetSession()).PSendSysMessage("now switch to `/s` and chat away.");
@@ -1448,7 +1459,7 @@ public:
 		}
 		else
 		{
-			player->UpdateSkillsToMaxSkillsForLevel();
+			player->UpdateSkillsForLevel(); //UpdateSkillsToMaxSkillsForLevel();
 
 			handler->PSendSysMessage("Your skills have been maxed.");
 			return_type = true;
@@ -1772,7 +1783,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 		Player* target = player->GetSelectedPlayer();
-		uint64 game_time = sWorld->GetGameTime();
+		uint64 game_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 
 		if (player->GetSession()->GetSecurity() >= sPREM->GetGMMinimumRank())
 		{
@@ -1794,7 +1805,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 		Player* target = player->GetSelectedPlayer();
-		uint64 game_time = sWorld->GetGameTime();
+		uint64 game_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 		std::string arg = args;
 
 		if (player->GetSession()->GetSecurity() >= sPREM->GetGMMinimumRank())
