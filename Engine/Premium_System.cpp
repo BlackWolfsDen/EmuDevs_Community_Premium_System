@@ -48,11 +48,6 @@
 #include "World.h"
 #include "WorldSession.h"
 
-// #include "WorldPacket.h"
-// #include "DBCEnums.h"
-// #include "GridNotifiersImpl.h"
-// #include "ReputationMgr.h"
-
 int BUFFS[24] = { 24752, 48074, 43223, 36880, 467, 48469, 48162, 48170, 16877, 10220, 13033, 11735, 10952, 23948, 26662, 47440, 53307, 132, 23737, 48470, 43002, 26393, 24705, 69994 };
 int DEBUFFS[4] = { 57724, 57723, 80354, 95809 };
 
