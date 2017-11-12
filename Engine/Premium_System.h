@@ -148,6 +148,11 @@ public:
 	std::unordered_map<uint32, PremiumTeamLocationElements>PremiumTeamLocations;
 	std::unordered_map<uint8, ClassSpells>PremiumClassSpells;
 
+	// Tools
+	static bool CheckIfPlayerInCombatOrDead(Player* player);
+	static void TeleportPlayer(Player* player, uint8 id);
+	static void RemoveItem(uint32 id, Player* player);
+
 private:
 	// Private Variables
 	uint8 PREMIUM_TYPE;
@@ -169,10 +174,6 @@ private:
 	uint8 PREMIUM_WATER_BREATHE;
 	uint8 PREMIUM_SPELL_COST_DECREASE;
 
-	// Tools
-	static bool CheckIfPlayerInCombatOrDead(Player* player);
-	static void TeleportPlayer(Player* player, uint8 id);
-	static void RemoveItem(uint32 id, Player* player);
 };
 
 #define sPREM PREM::instance()
