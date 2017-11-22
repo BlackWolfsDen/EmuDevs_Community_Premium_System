@@ -1,6 +1,7 @@
 #ifndef PREMIUM_SYSTEM_H
 #define PREMIUM_SYSTEM_H
 
+#include "Item.h"
 #include <unordered_map>
 
 struct PremiumElements
