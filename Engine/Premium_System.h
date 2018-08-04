@@ -1,6 +1,7 @@
 #ifndef PREMIUM_SYSTEM_H
 #define PREMIUM_SYSTEM_H
 
+#include "Item.h"
 #include <unordered_map>
 
 struct PremiumElements
@@ -94,14 +95,14 @@ public:
 	uint32 GetPremiumTitleMaskId() { return PREMIUM_TITLE_MASK_ID; }
 	uint32 SetPremiumChatDelay() { return PREMIUM_CHAT_DELAY; }
 	bool GetPremiumChatTeam() { return PREMIUM_CHAT_TEAM != 0; }
-	
+
 	// Setters
 	void SetPremiumType(uint8 v) { PREMIUM_TYPE = v; }
 	void SetPremiumModifier(float v) { PREMIUM_MODIFIER = v; }
 	void SetPremiumTimed(bool v) { PREMIUM_TIMER_ENABLE = v; }
 	void SetPremiumDuration(uint32 v) { PREMIUM_TIMER_DURATION = v; }
 	void SetGMMinimumRank(uint8 v) { PREMIUM_GM_MINIMUM_RANK = v; }
-	void SetPremiumUgradeItem(uint32 v) {PREMIUM_UPGRADE_ITEM = v; }
+	void SetPremiumUgradeItem(uint32 v) { PREMIUM_UPGRADE_ITEM = v; }
 	void SetWaterBreathe(bool v) { PREMIUM_WATER_BREATHE = v; }
 	void SetDecreaseSpellCost(bool v) { PREMIUM_SPELL_COST_DECREASE = v; }
 	void SetPremiumItemsEnabled(bool v) { PREMIUM_ITEMS_ENABLE = v; }
@@ -116,8 +117,8 @@ public:
 	void SetPremiumChatTeam(uint8 v) { PREMIUM_CHAT_TEAM = v; }
 
 	// Player Getterz
-	static uint32 GetPlayerPremiumId(Player* player);
-	bool IsPlayerPremium(Player* player) { return Premium[GetPlayerPremiumId(player)].premium != 0; }
+    bool IsPlayerPremium(Player* player) { return Premium[GetPlayerPremiumId(player)].premium != false; }
+    static uint32 GetPlayerPremiumId(Player* player);
 	bool DnDAppear(Player* player) { return Premium[GetPlayerPremiumId(player)].dndappear != 0; }
 	static void UpdatePlayerCustomHomeTeleport(uint32 guid, uint32 map_id, float x, float y, float z, float o);
 	uint64 GetPlayerPremiumStartTimeInSeconds(Player* player) { return ((((Premium[GetPlayerPremiumId(player)].time) / 60) / 60) / 24); }
@@ -148,6 +149,11 @@ public:
 	std::unordered_map<uint32, PremiumTeamLocationElements>PremiumTeamLocations;
 	std::unordered_map<uint8, ClassSpells>PremiumClassSpells;
 
+	// Tools
+	static bool CheckIfPlayerInCombatOrDead(Player* player);
+	static void TeleportPlayer(Player* player, uint8 id);
+	static void RemoveItem(uint32 id, Player* player);
+
 private:
 	// Private Variables
 	uint8 PREMIUM_TYPE;
@@ -169,10 +175,6 @@ private:
 	uint8 PREMIUM_WATER_BREATHE;
 	uint8 PREMIUM_SPELL_COST_DECREASE;
 
-	// Tools
-	static bool CheckIfPlayerInCombatOrDead(Player* player);
-	static void TeleportPlayer(Player* player, uint8 id);
-	static void RemoveItem(uint32 id, Player* player);
 };
 
 #define sPREM PREM::instance()
