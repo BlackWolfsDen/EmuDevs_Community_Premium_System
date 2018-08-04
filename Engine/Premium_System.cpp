@@ -1,45 +1,52 @@
 /*
-			© EmuDev's Premium System ©
+Â© EmuDev's Premium System Â©
 
-	By Grumbo / slp13at420 `The Mad Scientist` of EmuDevs.com ©
-	with the community of EmuDevs.com,
-	for the community of EmuDevs.com.
+By Grumbo / slp13at420 `The Mad Scientist` of EmuDevs.com Â©
+with the community of EmuDevs.com,
+for the community of EmuDevs.com.
 
-	project info:
-		Type : CPP
-		started : 04/20/2016
-		finished : unfinished Public Release
-		public released : 04/20/2016
-		lead programmer : slp13at420
-		ideas provided by : Wolord, Portals, Kaev, Vitrex, jonmii, slp13at420.
-		scripting provided by : slp13at420.
-		scripting guideance provided by : GrandElf, Rochet2.
+project info:
+Type : CPP
+started : 04/20/2016
+finished : unfinished Public Release
+public released : 04/20/2016
+lead programmer : slp13at420
+ideas provided by : Wolord, Portals, Kaev, Vitrex, jonmii, slp13at420.
+scripting provided by : slp13at420.
+scripting guideance provided by : GrandElf, Rochet2.
 
-	This is a CPP Premium System.
-	This allows for either account Premium
-	rank or character Premium rank.
-	allows for permenant Premium rank 
-	or timed based duration Premium rank.
+This is a CPP Premium System.
+This allows for either account Premium
+rank or character Premium rank.
+allows for permenant Premium rank
+or timed based duration Premium rank.
 
-	© This is an EmuDevs.com only release. ©
-	© do not remove or change credits above ©
-	© dont share this System without prior approval ©
-	© Dont re-release as yours or anothers work ©
+Â© This is an EmuDevs.com only release. Â©
+Â© do not remove or change credits above Â©
+Â© dont share this System without prior approval Â©
+Â© Dont re-release as yours or anothers work Â©
 */
 
+#include "AchievementMgr.h"
 #include "chat.h"
 #include "Config.h"
+#include "DatabaseEnv.h"
+#include "GameTime.h"
 #include "Guild.h"
+#include "Item.h"
 #include "Language.h"
+#include "Log.h"
+#include "MapManager.h"
 #include "player.h"
 #include "Pet.h"
-#include "RBAC.h"
 #include "Premium_System.h"
+#include "RBAC.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"
 #include "SpellInfo.h"
 #include "Unit.h"
 #include "World.h"
+#include "WorldSession.h"
 
 int BUFFS[24] = { 24752, 48074, 43223, 36880, 467, 48469, 48162, 48170, 16877, 10220, 13033, 11735, 10952, 23948, 26662, 47440, 53307, 132, 23737, 48470, 43002, 26393, 24705, 69994 };
 int DEBUFFS[4] = { 57724, 57723, 80354, 95809 };
@@ -107,7 +114,7 @@ std::string PREM::GetAmountInString(uint32 amount)
 
 	if (amount > 9999)
 	{
-		tmp = floor(amount / 10000); 
+		tmp = floor(amount / 10000);
 		amount = amount - (tmp * 10000);
 		output = output + sPREM->ConvertNumberToString(tmp) + " Gold, ";
 	}
@@ -131,235 +138,235 @@ std::string PREM::GetAmountInString(uint32 amount)
 
 class PREMIUM_Load_Conf : public WorldScript
 {
-public: 
-	PREMIUM_Load_Conf() : WorldScript("PREMIUM_Load_Conf"){ };
+public:
+	PREMIUM_Load_Conf() : WorldScript("PREMIUM_Load_Conf") { };
 
-		virtual void OnConfigLoad(bool /*reload*/)
+	virtual void OnConfigLoad(bool /*reload*/)
+	{
+		TC_LOG_INFO("server.loading", "______________________________________");
+		TC_LOG_INFO("server.loading", "-     EmuDevs.com Premium System     -");
+
+		sPREM->SetPremiumType(sConfigMgr->GetIntDefault("PREM.TYPE", 0)); // 0 = acct :: 1 = character.
+		sPREM->SetPremiumModifier(sConfigMgr->GetFloatDefault("PREM.MODIFIER", 0.2f));
+		sPREM->SetPremiumTimed(sConfigMgr->GetBoolDefault("PREM.TIMED", 0)); // 0 = no :: 1 = yes duration -> Premium will reset after x days..
+		sPREM->SetPremiumDuration(sConfigMgr->GetIntDefault("PREM.DURATION", 30)); // x in days.
+		sPREM->SetGMMinimumRank(sConfigMgr->GetIntDefault("PREM.GM_MINIMUM_RANK", 3));
+		sPREM->SetPremiumUgradeItem(sConfigMgr->GetIntDefault("PREM.UPGRADE_ITEM", 64000));
+		sPREM->SetWaterBreathe(sConfigMgr->GetBoolDefault("PREM.WATER_BREATHE", 0));
+		sPREM->SetDecreaseSpellCost(sConfigMgr->GetBoolDefault("PREM.SPELL_COST_DECREASE", 0));
+		sPREM->SetPremiumItemsEnabled(sConfigMgr->GetBoolDefault("PREM.ITEMS", 0));
+		sPREM->SetPremiumTalentPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.TP_ENABLE", 0));
+		sPREM->SetPremiumTalentPointBonus(sConfigMgr->GetIntDefault("PREM.TP_BONUS", 14));
+		sPREM->SetPremiumHealthPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.HP_ENABLE", 0));
+		sPREM->SetPremiumManaPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.MANA_ENABLE", 0));
+		sPREM->SetPremiumRagePointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.RAGE_ENABLE", 0));
+		sPREM->SetPremiumTitleId(sConfigMgr->GetIntDefault("PREM.TITLE_ID", 500));
+		sPREM->SetPremiumTitleMaskId(sConfigMgr->GetIntDefault("PREM.TITLE_MASK_ID", 156));
+		sPREM->SetPremiumChatDelay(sConfigMgr->GetIntDefault("PREM.CHAT_TIMER", 5)); // in seconds // 5 = 5 seconds.
+		sPREM->SetPremiumChatTeam(sConfigMgr->GetIntDefault("PREM.CHAT_TEAM", 0)); // 0 = team chat only // 1 world chat.
+
+		uint32 PREMIUM_ITEM_COUNT = 0;
+
+		if (sPREM->IsPremiumItemsEnabled())
 		{
-			TC_LOG_INFO("server.loading", "______________________________________");
-			TC_LOG_INFO("server.loading", "-     EmuDevs.com Premium System     -");
+			QueryResult ItemQery = WorldDatabase.PQuery("SELECT `entry`, `premium` FROM `item_template` WHERE `premium`='1';");
 
-			sPREM->SetPremiumType(sConfigMgr->GetIntDefault("PREM.TYPE", 0)); // 0 = acct :: 1 = character.
-			sPREM->SetPremiumModifier(sConfigMgr->GetFloatDefault("PREM.MODIFIER", 0.2f));
-			sPREM->SetPremiumTimed(sConfigMgr->GetBoolDefault("PREM.TIMED", 0)); // 0 = no :: 1 = yes duration -> Premium will reset after x days..
-			sPREM->SetPremiumDuration(sConfigMgr->GetIntDefault("PREM.DURATION", 30)); // x in days.
-			sPREM->SetGMMinimumRank(sConfigMgr->GetIntDefault("PREM.GM_MINIMUM_RANK", 3));
-			sPREM->SetPremiumUgradeItem(sConfigMgr->GetIntDefault("PREM.UPGRADE_ITEM", 64000));
-			sPREM->SetWaterBreathe(sConfigMgr->GetBoolDefault("PREM.WATER_BREATHE", 0));
-			sPREM->SetDecreaseSpellCost(sConfigMgr->GetBoolDefault("PREM.SPELL_COST_DECREASE", 0));
-			sPREM->SetPremiumItemsEnabled(sConfigMgr->GetBoolDefault("PREM.ITEMS", 0));
-			sPREM->SetPremiumTalentPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.TP_ENABLE", 0));
-			sPREM->SetPremiumTalentPointBonus(sConfigMgr->GetIntDefault("PREM.TP_BONUS", 14));
-			sPREM->SetPremiumHealthPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.HP_ENABLE", 0));
-			sPREM->SetPremiumManaPointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.MANA_ENABLE", 0));
-			sPREM->SetPremiumRagePointBonusEnabled(sConfigMgr->GetBoolDefault("PREM.RAGE_ENABLE", 0));
-			sPREM->SetPremiumTitleId(sConfigMgr->GetIntDefault("PREM.TITLE_ID", 500));
-			sPREM->SetPremiumTitleMaskId(sConfigMgr->GetIntDefault("PREM.TITLE_MASK_ID", 156));
-			sPREM->SetPremiumChatDelay(sConfigMgr->GetIntDefault("PREM.CHAT_TIMER", 5)); // in seconds // 5 = 5 seconds.
-			sPREM->SetPremiumChatTeam(sConfigMgr->GetIntDefault("PREM.CHAT_TEAM", 0)); // 0 = team chat only // 1 world chat.
-
-			uint32 PREMIUM_ITEM_COUNT = 0;
-
-				if (sPREM->IsPremiumItemsEnabled())
-				{
-					QueryResult ItemQery = WorldDatabase.PQuery("SELECT `entry`, `premium` FROM `item_template` WHERE `premium`='1';");
-
-					if (ItemQery)
-					{
-						do
-						{
-							Field* fields = ItemQery->Fetch();
-							uint32 item_id = fields[0].GetUInt32();
-							uint32 premium = fields[1].GetUInt8();
-
-							PremiumItemElements& data1 = sPREM->PremiumItem[item_id];
-							// Save the DB values to the MyData object
-							data1.id = item_id;
-							data1.premium = premium;
-
-							 PREMIUM_ITEM_COUNT += 1;
-
-						} while (ItemQery->NextRow());
-					}
-				}
-
-			if (sPREM->GetPremiumType() == 0){ TC_LOG_INFO("server.loading", "- Premium type:Account"); };
-			if (sPREM->GetPremiumType() > 0){ TC_LOG_INFO("server.loading", "- Premium type:Character"); };
-
-			TC_LOG_INFO("server.loading", "- Premium GM Minimum rank:%u", sPREM->GetGMMinimumRank());
-
-			if (sPREM->IsPremiumTimed()){ TC_LOG_INFO("server.loading", "- Premium rank duration activated"); };
-			if (sPREM->IsPremiumTimed()){ TC_LOG_INFO("server.loading", "- Premium rank duration:%u days", sPREM->GetPremiumDurationInDays()); };
-			if (sPREM->IsPremiumItemsEnabled()){ TC_LOG_INFO("server.loading", "- Premium Items loaded:%u", PREMIUM_ITEM_COUNT); };
-
-			TC_LOG_INFO("server.loading", "- Premium modifier value:%.2f", sPREM->GetPremiumModifier());
-
-			if (sPREM->IsPremiumTalentPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Talent Points Enabled +%u", sPREM->GetPremiumTalentPointBonus()); };
-			if (sPREM->IsPremiumHealthPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Health Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
-			if (sPREM->IsPremiumManaPointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Mana Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
-			if (sPREM->IsPremiumRagePointBonusEnabled()){ TC_LOG_INFO("server.loading", "- Extra Rage Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
-			if (sPREM->CanWaterBreathe()){ TC_LOG_INFO("server.loading", "- Premium Water Breathing enabled"); };
-			if (sPREM->CanDecreaseSpellCost()){ TC_LOG_INFO("server.loading", "- Premium Reduced Spell Costs enabled"); };
-
-			if (sPREM->GetPremiumTitleId() > 0) // this block is to protect from crashing error where title is enabled but does not exist in the dbc file.
-			{
-				if (!sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()))
-				{
-					TC_LOG_INFO("server.loading", "- Premium Title ID:%u does NOT exist in dbc file.", sPREM->GetPremiumTitleId());
-					TC_LOG_INFO("server.loading", "- Premium Title:%u Disabled", sPREM->GetPremiumTitleId());
-
-					sPREM->SetPremiumTitleId(0);
-				}
-
-				else { TC_LOG_INFO("server.loading", "- Premium Title ID:%u enabled", sPREM->GetPremiumTitleId()); };
-			}
-
-			QueryResult PremLocQry = WorldDatabase.Query("SELECT * FROM premium_locations");
-
-			if (PremLocQry)
+			if (ItemQery)
 			{
 				do
 				{
-					Field *fields = PremLocQry->Fetch();
-					// Save the DB values to the LocData object
-					uint8 id = fields[0].GetUInt8();
-					uint32 map_id = fields[1].GetUInt32();
-					float x = fields[2].GetFloat();
-					float y = fields[3].GetFloat();
-					float z = fields[4].GetFloat();
-					float o = fields[5].GetFloat();
+					Field* fields = ItemQery->Fetch();
+					uint32 item_id = fields[0].GetUInt32();
+					uint32 premium = fields[1].GetUInt8();
 
-					PremiumLocationElements& data2 = sPREM->PremiumLocations[id]; // like Lua table GWARZ[guild_id].entry
-					data2.id = id;
-					data2.map_id = map_id;
-					data2.x = x;
-					data2.y = y;
-					data2.z = z;
-					data2.o = o;
+					PremiumItemElements& data1 = sPREM->PremiumItem[item_id];
+					// Save the DB values to the MyData object
+					data1.id = item_id;
+					data1.premium = premium;
 
-				} while (PremLocQry->NextRow());
+					PREMIUM_ITEM_COUNT += 1;
 
+				} while (ItemQery->NextRow());
 			}
-
-			if (PremLocQry){ TC_LOG_INFO("server.loading", "- Premium Locations Loaded:%u", sPREM->PremiumLocations.size()); };
-
-			QueryResult PremMallLocQry = WorldDatabase.Query("SELECT * FROM premium_Mall_locations");
-
-			if (PremMallLocQry)
-			{
-				do
-				{
-					Field *fields = PremMallLocQry->Fetch();
-					// Save the DB values to the LocData object
-					uint8 id = fields[0].GetUInt8();
-					uint32 map_id = fields[1].GetUInt32();
-					float x = fields[2].GetFloat();
-					float y = fields[3].GetFloat();
-					float z = fields[4].GetFloat();
-					float o = fields[5].GetFloat();
-
-					PremiumLocationElements& data3 = sPREM->PremiumMallLocations[id]; // like Lua table GWARZ[guild_id].entry
-					data3.id = id;
-					data3.map_id = map_id;
-					data3.x = x;
-					data3.y = y;
-					data3.z = z;
-					data3.o = o;
-
-				} while (PremMallLocQry->NextRow());
-
-			}
-
-			if (PremMallLocQry){ TC_LOG_INFO("server.loading", "- Premium Mall Locations Loaded:%u", sPREM->PremiumMallLocations.size()); };
-
-			QueryResult PremPlayerLocQry = WorldDatabase.Query("SELECT * FROM premium_player_teleports");
-
-			if (PremPlayerLocQry)
-			{
-				do
-				{
-					Field *fields = PremPlayerLocQry->Fetch();
-					// Save the DB values to the LocData object
-					uint32 guid = fields[0].GetUInt32();
-					uint32 map_id = fields[1].GetUInt32();
-					float x = fields[2].GetFloat();
-					float y = fields[3].GetFloat();
-					float z = fields[4].GetFloat();
-					float o = fields[5].GetFloat();
-
-					PremiumPlayerLocationElements& data4 = sPREM->PremiumPlayerLocations[guid]; // like Lua table GWARZ[guild_id].entry
-					data4.guid = guid;
-					data4.map_id = map_id;
-					data4.x = x;
-					data4.y = y;
-					data4.z = z;
-					data4.o = o;
-
-				} while (PremPlayerLocQry->NextRow());
-
-			}
-
-			if (PremPlayerLocQry){ TC_LOG_INFO("server.loading", "- Premium Player Locations Loaded:%u", sPREM->PremiumPlayerLocations.size()); };
-
-			QueryResult PremTeamLocQry = WorldDatabase.Query("SELECT * FROM premium_team_teleports");
-
-			if (PremTeamLocQry)
-			{
-				do
-				{
-					Field *fields = PremTeamLocQry->Fetch();
-					// Save the DB values to the LocData object
-					uint32 team = fields[0].GetUInt32();
-					uint32 map_id = fields[1].GetUInt32();
-					float x = fields[2].GetFloat();
-					float y = fields[3].GetFloat();
-					float z = fields[4].GetFloat();
-					float o = fields[5].GetFloat();
-
-					PremiumTeamLocationElements& data5 = sPREM->PremiumTeamLocations[team]; // like Lua table GWARZ[guild_id].entry
-					data5.team = team;
-					data5.map_id = map_id;
-					data5.x = x;
-					data5.y = y;
-					data5.z = z;
-					data5.o = o;
-
-				} while (PremTeamLocQry->NextRow());
-
-			}
-
-			if (PremTeamLocQry){ TC_LOG_INFO("server.loading", "- Premium Team Locations Loaded"); };
-
-			QueryResult PremPublicMallLocQry = WorldDatabase.Query("SELECT * FROM premium_Mall_locations");
-
-			if (PremPublicMallLocQry)
-			{
-				do
-				{
-					Field *fields = PremPublicMallLocQry->Fetch();
-					// Save the DB values to the LocData object
-					uint8 id = fields[0].GetUInt8();
-					uint32 map_id = fields[1].GetUInt32();
-					float x = fields[2].GetFloat();
-					float y = fields[3].GetFloat();
-					float z = fields[4].GetFloat();
-					float o = fields[5].GetFloat();
-
-					PremiumLocationElements& data6 = sPREM->PremiumPublicMallLocations[id]; // like Lua table GWARZ[guild_id].entry
-					data6.id = id;
-					data6.map_id = map_id;
-					data6.x = x;
-					data6.y = y;
-					data6.z = z;
-					data6.o = o;
-
-				} while (PremPublicMallLocQry->NextRow());
-
-			}
-
-			TC_LOG_INFO("server.loading", "- Premium rank upgrade item id:%u", sPREM->GetPremiumUgradeItem());
-			TC_LOG_INFO("server.loading", "______________________________________");
 		}
+
+		if (sPREM->GetPremiumType() == 0) { TC_LOG_INFO("server.loading", "- Premium type:Account"); };
+		if (sPREM->GetPremiumType() > 0) { TC_LOG_INFO("server.loading", "- Premium type:Character"); };
+
+		TC_LOG_INFO("server.loading", "- Premium GM Minimum rank:%u", sPREM->GetGMMinimumRank());
+
+		if (sPREM->IsPremiumTimed()) { TC_LOG_INFO("server.loading", "- Premium rank duration activated"); };
+		if (sPREM->IsPremiumTimed()) { TC_LOG_INFO("server.loading", "- Premium rank duration:%u days", sPREM->GetPremiumDurationInDays()); };
+		if (sPREM->IsPremiumItemsEnabled()) { TC_LOG_INFO("server.loading", "- Premium Items loaded:%u", PREMIUM_ITEM_COUNT); };
+
+		TC_LOG_INFO("server.loading", "- Premium modifier value:%.2f", sPREM->GetPremiumModifier());
+
+		if (sPREM->IsPremiumTalentPointBonusEnabled()) { TC_LOG_INFO("server.loading", "- Extra Talent Points Enabled +%u", sPREM->GetPremiumTalentPointBonus()); };
+		if (sPREM->IsPremiumHealthPointBonusEnabled()) { TC_LOG_INFO("server.loading", "- Extra Health Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
+		if (sPREM->IsPremiumManaPointBonusEnabled()) { TC_LOG_INFO("server.loading", "- Extra Mana Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
+		if (sPREM->IsPremiumRagePointBonusEnabled()) { TC_LOG_INFO("server.loading", "- Extra Rage Points Enabled x%.2f", sPREM->GetPremiumModifier()); };
+		if (sPREM->CanWaterBreathe()) { TC_LOG_INFO("server.loading", "- Premium Water Breathing enabled"); };
+		if (sPREM->CanDecreaseSpellCost()) { TC_LOG_INFO("server.loading", "- Premium Reduced Spell Costs enabled"); };
+
+		if (sPREM->GetPremiumTitleId() > 0) // this block is to protect from crashing error where title is enabled but does not exist in the dbc file.
+		{
+			if (!sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()))
+			{
+				TC_LOG_INFO("server.loading", "- Premium Title ID:%u does NOT exist in dbc file.", sPREM->GetPremiumTitleId());
+				TC_LOG_INFO("server.loading", "- Premium Title:%u Disabled", sPREM->GetPremiumTitleId());
+
+				sPREM->SetPremiumTitleId(0);
+			}
+
+			else { TC_LOG_INFO("server.loading", "- Premium Title ID:%u enabled", sPREM->GetPremiumTitleId()); };
+		}
+
+		QueryResult PremLocQry = WorldDatabase.Query("SELECT * FROM premium_locations");
+
+		if (PremLocQry)
+		{
+			do
+			{
+				Field *fields = PremLocQry->Fetch();
+				// Save the DB values to the LocData object
+				uint8 id = fields[0].GetUInt8();
+				uint32 map_id = fields[1].GetUInt32();
+				float x = fields[2].GetFloat();
+				float y = fields[3].GetFloat();
+				float z = fields[4].GetFloat();
+				float o = fields[5].GetFloat();
+
+				PremiumLocationElements& data2 = sPREM->PremiumLocations[id]; // like Lua table GWARZ[guild_id].entry
+				data2.id = id;
+				data2.map_id = map_id;
+				data2.x = x;
+				data2.y = y;
+				data2.z = z;
+				data2.o = o;
+
+			} while (PremLocQry->NextRow());
+
+		}
+
+		if (PremLocQry) { TC_LOG_INFO("server.loading", "- Premium Locations Loaded:%u", sPREM->PremiumLocations.size()); };
+
+		QueryResult PremMallLocQry = WorldDatabase.Query("SELECT * FROM premium_Mall_locations");
+
+		if (PremMallLocQry)
+		{
+			do
+			{
+				Field *fields = PremMallLocQry->Fetch();
+				// Save the DB values to the LocData object
+				uint8 id = fields[0].GetUInt8();
+				uint32 map_id = fields[1].GetUInt32();
+				float x = fields[2].GetFloat();
+				float y = fields[3].GetFloat();
+				float z = fields[4].GetFloat();
+				float o = fields[5].GetFloat();
+
+				PremiumLocationElements& data3 = sPREM->PremiumMallLocations[id]; // like Lua table GWARZ[guild_id].entry
+				data3.id = id;
+				data3.map_id = map_id;
+				data3.x = x;
+				data3.y = y;
+				data3.z = z;
+				data3.o = o;
+
+			} while (PremMallLocQry->NextRow());
+
+		}
+
+		if (PremMallLocQry) { TC_LOG_INFO("server.loading", "- Premium Mall Locations Loaded:%u", sPREM->PremiumMallLocations.size()); };
+
+		QueryResult PremPlayerLocQry = WorldDatabase.Query("SELECT * FROM premium_player_teleports");
+
+		if (PremPlayerLocQry)
+		{
+			do
+			{
+				Field *fields = PremPlayerLocQry->Fetch();
+				// Save the DB values to the LocData object
+				uint32 guid = fields[0].GetUInt32();
+				uint32 map_id = fields[1].GetUInt32();
+				float x = fields[2].GetFloat();
+				float y = fields[3].GetFloat();
+				float z = fields[4].GetFloat();
+				float o = fields[5].GetFloat();
+
+				PremiumPlayerLocationElements& data4 = sPREM->PremiumPlayerLocations[guid]; // like Lua table GWARZ[guild_id].entry
+				data4.guid = guid;
+				data4.map_id = map_id;
+				data4.x = x;
+				data4.y = y;
+				data4.z = z;
+				data4.o = o;
+
+			} while (PremPlayerLocQry->NextRow());
+
+		}
+
+		if (PremPlayerLocQry) { TC_LOG_INFO("server.loading", "- Premium Player Locations Loaded:%u", sPREM->PremiumPlayerLocations.size()); };
+
+		QueryResult PremTeamLocQry = WorldDatabase.Query("SELECT * FROM premium_team_teleports");
+
+		if (PremTeamLocQry)
+		{
+			do
+			{
+				Field *fields = PremTeamLocQry->Fetch();
+				// Save the DB values to the LocData object
+				uint32 team = fields[0].GetUInt32();
+				uint32 map_id = fields[1].GetUInt32();
+				float x = fields[2].GetFloat();
+				float y = fields[3].GetFloat();
+				float z = fields[4].GetFloat();
+				float o = fields[5].GetFloat();
+
+				PremiumTeamLocationElements& data5 = sPREM->PremiumTeamLocations[team]; // like Lua table GWARZ[guild_id].entry
+				data5.team = team;
+				data5.map_id = map_id;
+				data5.x = x;
+				data5.y = y;
+				data5.z = z;
+				data5.o = o;
+
+			} while (PremTeamLocQry->NextRow());
+
+		}
+
+		if (PremTeamLocQry) { TC_LOG_INFO("server.loading", "- Premium Team Locations Loaded"); };
+
+		QueryResult PremPublicMallLocQry = WorldDatabase.Query("SELECT * FROM premium_Mall_locations");
+
+		if (PremPublicMallLocQry)
+		{
+			do
+			{
+				Field *fields = PremPublicMallLocQry->Fetch();
+				// Save the DB values to the LocData object
+				uint8 id = fields[0].GetUInt8();
+				uint32 map_id = fields[1].GetUInt32();
+				float x = fields[2].GetFloat();
+				float y = fields[3].GetFloat();
+				float z = fields[4].GetFloat();
+				float o = fields[5].GetFloat();
+
+				PremiumLocationElements& data6 = sPREM->PremiumPublicMallLocations[id]; // like Lua table GWARZ[guild_id].entry
+				data6.id = id;
+				data6.map_id = map_id;
+				data6.x = x;
+				data6.y = y;
+				data6.z = z;
+				data6.o = o;
+
+			} while (PremPublicMallLocQry->NextRow());
+
+		}
+
+		TC_LOG_INFO("server.loading", "- Premium rank upgrade item id:%u", sPREM->GetPremiumUgradeItem());
+		TC_LOG_INFO("server.loading", "______________________________________");
+	}
 };
 
 // Player Functions
@@ -368,14 +375,14 @@ uint32 PREM::GetPlayerPremiumId(Player* player)
 {
 	uint32 id;
 
-		if (sPREM->GetPremiumType() == 0)
-		{
-			id = player->GetSession()->GetAccountId();
-		}
-		else
-		{
-			id = player->GetSession()->GetGUIDLow();
-		}
+	if (sPREM->GetPremiumType() == 0)
+	{
+		id = player->GetSession()->GetAccountId();
+	}
+	else
+	{
+		id = player->GetSession()->GetGUIDLow();
+	}
 
 	return id;
 }
@@ -387,12 +394,12 @@ public:
 	{
 		uint32 id = sPREM->GetPlayerPremiumId(player);
 
-		uint64 current_time = sWorld->GetGameTime();
+		uint64 current_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 		uint64 player_premium_time = sPREM->Premium[id].time;
 		uint64 duration = sPREM->GetPremiumDurationInSeconds();
 
 		uint64 cycle_duration = ((player_premium_time + duration) - current_time);
-		
+
 		player->m_Events.AddEvent(this, player->m_Events.CalculateTime(cycle_duration * 1000)); // timed events are in ms while everything else is stored in seconds...
 	}
 
@@ -417,7 +424,7 @@ void PREM::AddPremiumToPlayer(Player* player)
 
 	if (sPREM->GetPremiumTitleId())
 	{
-		if (!player->HasTitle(sPREM->GetPremiumTitleId())){player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), false); };
+		if (!player->HasTitle(sPREM->GetPremiumTitleId())) { player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), false); };
 
 		player->SetUInt32Value(PLAYER_CHOSEN_TITLE, sPREM->GetPremiumTitleId());
 	}
@@ -429,9 +436,9 @@ void PREM::AddPremiumToPlayer(Player* player)
 		player->SetMaxHealth(MaxHP);
 	}
 
-	if ((player->getPowerType() == POWER_MANA) && (sPREM->IsPremiumManaPointBonusEnabled()))	{ player->SetMaxPower(POWER_MANA, maxPower); };
+    if ((player->GetPowerType() == POWER_MANA) && (sPREM->IsPremiumManaPointBonusEnabled())) { player->SetMaxPower(POWER_MANA, maxPower); };
 
-	if ((player->getPowerType() == POWER_RAGE) && (sPREM->IsPremiumRagePointBonusEnabled()))	{ player->SetMaxPower(POWER_RAGE, maxPower); };
+	if ((player->GetPowerType() == POWER_RAGE) && (sPREM->IsPremiumRagePointBonusEnabled())) { player->SetMaxPower(POWER_RAGE, maxPower); };
 
 	ChatHandler(player->GetSession()).PSendSysMessage("player:PremiumRankAdded.");
 }
@@ -448,11 +455,11 @@ void PREM::RemovePremiumFromPlayer(Player* player)
 		if (player->GetUInt32Value(PLAYER_CHOSEN_TITLE) == sPREM->GetPremiumTitleMaskId()) { player->SetUInt32Value(PLAYER_CHOSEN_TITLE, -1); };
 	}
 
-	if (player->HasTitle(sPREM->GetPremiumTitleId())){ player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), true); };
+	if (player->HasTitle(sPREM->GetPremiumTitleId())) { player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), true); };
 
-	if ((player->getPowerType() == POWER_MANA) && (sPREM->IsPremiumManaPointBonusEnabled()))	{ player->SetMaxPower(POWER_MANA, sPREM->Premium[id].power_max); };
+	if ((player->GetPowerType() == POWER_MANA) && (sPREM->IsPremiumManaPointBonusEnabled())) { player->SetMaxPower(POWER_MANA, sPREM->Premium[id].power_max); };
 
-	if ((player->getPowerType() == POWER_RAGE) && (sPREM->IsPremiumRagePointBonusEnabled()))	{ player->SetMaxPower(POWER_RAGE, sPREM->Premium[id].power_max); };
+	if ((player->GetPowerType() == POWER_RAGE) && (sPREM->IsPremiumRagePointBonusEnabled())) { player->SetMaxPower(POWER_RAGE, sPREM->Premium[id].power_max); };
 
 	ChatHandler(player->GetSession()).PSendSysMessage("player:PremiumRankRemoved.");
 }
@@ -504,7 +511,7 @@ uint64 PREM::GetPlayerPremiumRemainingTimeInSeconds(Player* player)
 {
 	uint32 id = sPREM->GetPlayerPremiumId(player);
 	uint64 duration = sPREM->GetPremiumDurationInSeconds();
-	uint64 current_time = sWorld->GetGameTime();
+	uint64 current_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 	uint64 player_time = sPREM->Premium[id].time;
 	uint64 remaining_time = 0;
 
@@ -558,17 +565,17 @@ std::string PREM::GetPlayerPremiumTimeLeftInString(Player* player)
 
 void PREM::DepositGoldToPlayerGuildBank(Player* player, uint32 amount)
 {
-		Guild* guild = player->GetGuild();
+	Guild* guild = player->GetGuild();
 
-		uint32 Deposit_Amount = ceil(amount * sPREM->GetPremiumModifier());
+	uint32 Deposit_Amount = ceil(amount * sPREM->GetPremiumModifier());
 
-		std::string money = sPREM->GetAmountInString(Deposit_Amount);
+	std::string money = sPREM->GetAmountInString(Deposit_Amount);
 
-		guild->HandleMemberDepositMoney(player->GetSession(), Deposit_Amount);
+	guild->HandleMemberDepositMoney(player->GetSession(), Deposit_Amount);
 
-		ChatHandler(player->GetSession()).PSendSysMessage("%s of your loot get's deposited into your Guild's bank.", money.c_str());
+	ChatHandler(player->GetSession()).PSendSysMessage("%s of your loot get's deposited into your Guild's bank.", money.c_str());
 
-		player->ModifyMoney((0 - Deposit_Amount));
+	player->ModifyMoney((0 - Deposit_Amount));
 }
 
 uint32 PREM::IncreaseValueWithModifier(Player* player, uint32 value)
@@ -595,23 +602,23 @@ void SendPremiumMessage(std::string msg, uint8 team_id)
 
 	for (SessionMap::iterator itr = sessions.begin(); itr != sessions.end(); ++itr)
 	{
-			if (!itr->second)
-				continue;
+		if (!itr->second)
+			continue;
 
 		Player *player = itr->second->GetPlayer();
 		bool IsPlayerPremium = sPREM->IsPlayerPremium(player);
 
-			if ((player->IsGameMaster()) || (IsPlayerPremium && ((player->GetTeamId() == team_id) || ((player->GetTeamId() != team_id) && ((sPREM->GetPremiumChatTeam()) || team_id == 2)))))
-			{
-				ChatHandler(player->GetSession()).PSendSysMessage(msg.c_str());
-			}
+		if ((player->IsGameMaster()) || (IsPlayerPremium && ((player->GetTeamId() == team_id) || ((player->GetTeamId() != team_id) && ((sPREM->GetPremiumChatTeam()) || team_id == 2)))))
+		{
+			ChatHandler(player->GetSession()).PSendSysMessage(msg.c_str());
+		}
 	}
 };
 
 class Unit_Premium_Engine : public UnitScript
 {
 public:
-	Unit_Premium_Engine() : UnitScript("Unit_Premium_Engine"){ };
+	Unit_Premium_Engine() : UnitScript("Unit_Premium_Engine") { };
 
 	virtual void OnHeal(Unit* healer, Unit* reciever, uint32& gain)
 	{
@@ -680,161 +687,161 @@ public:
 
 class Player_Premium_Engine : public PlayerScript
 {
-public: 
-	Player_Premium_Engine() : PlayerScript("Player_Premium_Engine"){ };
+public:
+	Player_Premium_Engine() : PlayerScript("Player_Premium_Engine") { };
 
-		virtual void OnLogout(Player* player)
+	virtual void OnLogout(Player* player)
+	{
+		sPREM->RemovePremiumFromPlayer(player);
+
+		uint32 id = sPREM->GetPlayerPremiumId(player);
+
+		sPREM->Premium.erase(id);
+	};
+
+	virtual void OnLogin(Player* player, bool /*firstLogin*/)
+	{
+		uint32 id = sPREM->GetPlayerPremiumId(player);
+
+		QueryResult PremiumQery;
+
+		if (sPREM->GetPremiumType() == 0)
 		{
+			PremiumQery = LoginDatabase.PQuery("SELECT premium, premium_time FROM account WHERE id=%u;", id);
+		}
+		else
+		{
+			PremiumQery = CharacterDatabase.PQuery("SELECT premium , premium_time FROM characters WHERE guid=%u;", id);
+		}
+
+		if (PremiumQery)
+		{
+			Field* fields = PremiumQery->Fetch();
+			uint8 premium = fields[0].GetUInt8();
+			uint32 premium_time = fields[1].GetUInt64();
+
+			PremiumElements& data = sPREM->Premium[id];
+			// Save the values to the Data object. Build the players unordered_map table.
+			data.id = id;
+			data.premium = premium;
+			data.time = premium_time;
+			data.hp = player->GetMaxHealth();
+			data.power_max = player->GetMaxPower(player->GetPowerType());
+			data.chat = 0;
+			data.chat_time = 0;
+		}
+		else
+		{
+			if (sPREM->GetPremiumType() == 0)
+			{
+				TC_LOG_INFO("server.loading", "PREMIUM_LOAD_ERROR ID:%u", id);
+			}
+			else
+			{
+				TC_LOG_INFO("server.loading", "PREMIUM_LOAD_ERROR GUID:%u", id);
+			}
+		}
+
+		if (sPREM->IsPlayerPremium(player))
+		{
+			ChatHandler(player->GetSession()).PSendSysMessage("Greetings %s. You are ranked Premium.", player->GetName());
+
+			sPREM->AddPremiumToPlayer(player);
+		}
+		else
+		{
+			ChatHandler(player->GetSession()).PSendSysMessage("Greetings %s.You can donate to recieve the Premium rank.", player->GetName());
+
 			sPREM->RemovePremiumFromPlayer(player);
+		}
+	} // On Login
 
-			uint32 id = sPREM->GetPlayerPremiumId(player);
-
-			sPREM->Premium.erase(id);
-		};
-
-		virtual void OnLogin(Player* player, bool /*firstLogin*/)
+	virtual void OnDuelEnd(Player* killer, Player* victim, DuelCompleteType /*type*/)
+	{ // idea from Kaev
+		if (sPREM->IsPlayerPremium(killer))
 		{
-			uint32 id = sPREM->GetPlayerPremiumId(player);
+			killer->SetHealth(killer->GetMaxHealth());
 
-			QueryResult PremiumQery;
-			
-				if (sPREM->GetPremiumType() == 0)
-				{ 
-					PremiumQery = LoginDatabase.PQuery("SELECT premium, premium_time FROM account WHERE id=%u;", id);
-				}
-				else
-				{ 
-					PremiumQery = CharacterDatabase.PQuery("SELECT premium , premium_time FROM characters WHERE guid=%u;", id);
-				}
+			if (killer->GetPowerType() == POWER_MANA) { killer->SetPower(POWER_MANA, killer->GetMaxPower(POWER_MANA)); };
 
-				if (PremiumQery)
-				{
-					Field* fields = PremiumQery->Fetch();
-					uint8 premium = fields[0].GetUInt8();
-					uint32 premium_time = fields[1].GetUInt64();
-
-					PremiumElements& data = sPREM->Premium[id];
-					// Save the values to the Data object. Build the players unordered_map table.
-					data.id = id;
-					data.premium = premium;
-					data.time = premium_time;
-					data.hp = player->GetMaxHealth();
-					data.power_max = player->GetMaxPower(player->getPowerType());
-					data.chat = 0;
-					data.chat_time = 0;
-				}
-				else
-				{
-					if (sPREM->GetPremiumType() == 0)
-					{ 
-						TC_LOG_INFO("server.loading", "PREMIUM_LOAD_ERROR ID:%u", id); 
-					}
-					else
-					{ 
-						TC_LOG_INFO("server.loading", "PREMIUM_LOAD_ERROR GUID:%u", id); 
-					}
-				}
-
-				if (sPREM->IsPlayerPremium(player))
-				{
-					ChatHandler(player->GetSession()).PSendSysMessage("Greetings %s. You are ranked Premium.", player->GetName());
-
-					sPREM->AddPremiumToPlayer(player);
-				}
-				else
-				{
-					ChatHandler(player->GetSession()).PSendSysMessage("Greetings %s.You can donate to recieve the Premium rank.", player->GetName());
-	
-					sPREM->RemovePremiumFromPlayer(player);
-				}
-		} // On Login
-
-		virtual void OnDuelEnd(Player* killer, Player* victim, DuelCompleteType /*type*/)
-		{ // idea from Kaev
-			if (sPREM->IsPlayerPremium(killer))
+			for (uint32 i = 0; i < sizeof(DEBUFFS) / sizeof(DEBUFFS); i++)
 			{
-				killer->SetHealth(killer->GetMaxHealth());
-
-					if (killer->getPowerType() == POWER_MANA){ killer->SetPower(POWER_MANA, killer->GetMaxPower(POWER_MANA)); };
-
-					for (uint32 i = 0; i < sizeof(DEBUFFS) / sizeof(DEBUFFS); i++)
-					{
-						if (killer->HasAura(DEBUFFS[i])){ killer->RemoveAura(DEBUFFS[i]); };
-					}
-			}
-
-			if (sPREM->IsPlayerPremium(victim))
-			{
-				victim->SetHealth(victim->GetMaxHealth());
-
-					if (victim->getPowerType() == POWER_MANA){ victim->SetPower(POWER_MANA, victim->GetMaxPower(POWER_MANA)); };
-
-					for (uint32 i = 0; i < sizeof(DEBUFFS) / sizeof(DEBUFFS); i++)
-					{
-						if (victim->HasAura(DEBUFFS[i])){ victim->RemoveAura(DEBUFFS[i]); };
-					}
-			}
-		} // Duel end
-
-		virtual void OnChat(Player* player, uint32 type, uint32 lang, std::string& msg)
-		{
-			uint64 current_time = sWorld->GetGameTime();
-			uint32 id = sPREM->GetPlayerPremiumId(player);
-			std::string PCMSG = "";
-
-			std::string ChannelColor = "|cff808080";
-			std::string TeamColor[2] = { "|cff0080FF", "|cffCC0000" };
-
-			if (player->IsGameMaster()) // here we will set the gm's stored values so they clear the checks.
-			{
-				sPREM->Premium[id].time = current_time - sPREM->SetPremiumChatDelay();
-				sPREM->Premium[id].last_message = "";
-			}
-
-			if ((msg != "") && (lang != LANG_ADDON) && (msg != "Away") && (player->CanSpeak() == true) && (sPREM->Premium[id].chat == 1))
-			{
-
-				if ((current_time < (sPREM->Premium[id].time + sPREM->SetPremiumChatDelay())) || (sPREM->Premium[id].last_message == msg))
-				{
-					ChatHandler(player->GetSession()).PSendSysMessage("-Spam detect triggered-");
-				}
-				else
-				{
-					sPREM->Premium[id].last_message = msg;
-					sPREM->Premium[id].time = current_time;
-					uint8 team_id = player->GetTeamId();
-
-					PCMSG += "[" + ChannelColor + "Premium|r][" + TeamColor[team_id] + player->GetName() + "|r]";
-
-					if (player->IsGameMaster())
-					{ 
-						PCMSG += "[GM]"; 
-						team_id = 2;
-					};
-
-					PCMSG += ":" + msg;
-
-					SendPremiumMessage(PCMSG, team_id);
-
-					msg = -1;
-				}
+				if (killer->HasAura(DEBUFFS[i])) { killer->RemoveAura(DEBUFFS[i]); };
 			}
 		}
 
-		virtual void OnGiveXP(Player* player, uint32& amount, Unit* /*victim*/) 
+		if (sPREM->IsPlayerPremium(victim))
 		{
-			amount = sPREM->IncreaseValueWithModifier(player, amount);
+			victim->SetHealth(victim->GetMaxHealth());
+
+			if (victim->GetPowerType() == POWER_MANA) { victim->SetPower(POWER_MANA, victim->GetMaxPower(POWER_MANA)); };
+
+			for (uint32 i = 0; i < sizeof(DEBUFFS) / sizeof(DEBUFFS); i++)
+			{
+				if (victim->HasAura(DEBUFFS[i])) { victim->RemoveAura(DEBUFFS[i]); };
+			}
+		}
+	} // Duel end
+
+	virtual void OnChat(Player* player, uint32 type, uint32 lang, std::string& msg)
+	{
+		uint64 current_time = GameTime::GetGameTime();// sWorld->GetGameTime();
+		uint32 id = sPREM->GetPlayerPremiumId(player);
+		std::string PCMSG = "";
+
+		std::string ChannelColor = "|cff808080";
+		std::string TeamColor[2] = { "|cff0080FF", "|cffCC0000" };
+
+		if (player->IsGameMaster()) // here we will set the gm's stored values so they clear the checks.
+		{
+			sPREM->Premium[id].time = current_time - sPREM->SetPremiumChatDelay();
+			sPREM->Premium[id].last_message = "";
 		}
 
-		virtual void OnReputationChange(Player* player, uint32 /*factionId*/, int32& standing, bool /*incremental*/)
+		if ((msg != "") && (lang != LANG_ADDON) && (msg != "Away") && (player->CanSpeak() == true) && (sPREM->Premium[id].chat == 1))
 		{
-			standing = sPREM->IncreaseValueWithModifier(player, standing);
+
+			if ((current_time < (sPREM->Premium[id].time + sPREM->SetPremiumChatDelay())) || (sPREM->Premium[id].last_message == msg))
+			{
+				ChatHandler(player->GetSession()).PSendSysMessage("-Spam detect triggered-");
+			}
+			else
+			{
+				sPREM->Premium[id].last_message = msg;
+				sPREM->Premium[id].time = current_time;
+				uint8 team_id = player->GetTeamId();
+
+				PCMSG += "[" + ChannelColor + "Premium|r][" + TeamColor[team_id] + player->GetName() + "|r]";
+
+				if (player->IsGameMaster())
+				{
+					PCMSG += "[GM]";
+					team_id = 2;
+				};
+
+				PCMSG += ":" + msg;
+
+				SendPremiumMessage(PCMSG, team_id);
+
+				msg = -1;
+			}
 		}
+	}
+
+	virtual void OnGiveXP(Player* player, uint32& amount, Unit* /*victim*/)
+	{
+		amount = sPREM->IncreaseValueWithModifier(player, amount);
+	}
+
+	virtual void OnReputationChange(Player* player, uint32 /*factionId*/, int32& standing, bool /*incremental*/)
+	{
+		standing = sPREM->IncreaseValueWithModifier(player, standing);
+	}
 };
 
 // Item Functions
 
-void RemoveItem(uint32 id, Player* player){	player->DestroyItemCount(uint32(id), 1, true);}
+void PREM::RemoveItem(uint32 id, Player* player) { player->DestroyItemCount(uint32(id), 1, true); }
 
 void PREM::UpdateItemPremiumValue(uint32 item_id, uint8 value)
 {
@@ -844,44 +851,44 @@ void PREM::UpdateItemPremiumValue(uint32 item_id, uint8 value)
 
 class Premium_Coin_Script : public ItemScript
 {
-public: 
-	Premium_Coin_Script() : ItemScript("Premium_Coin_Script"){ };
+public:
+	Premium_Coin_Script() : ItemScript("Premium_Coin_Script") { };
 
-		virtual bool OnUse(Player* player, Item* item, SpellCastTargets const& targets)
+	virtual bool OnUse(Player* player, Item* item, SpellCastTargets const& targets)
+	{
+		uint32 id = sPREM->GetPlayerPremiumId(player);
+
+		if (sPREM->IsPlayerPremium(player))  // i may just remove this and let players update while they still are Premium ranked.
 		{
-			uint32 id = sPREM->GetPlayerPremiumId(player);
+			std::string output = sPREM->GetPlayerPremiumTimeLeftInString(player);
 
-				if (sPREM->IsPlayerPremium(player))  // i may just remove this and let players update while they still are Premium ranked.
-				{
-					std::string output = sPREM->GetPlayerPremiumTimeLeftInString(player);
+			ChatHandler(player->GetSession()).PSendSysMessage("You allready have the Premium rank.");
 
-					ChatHandler(player->GetSession()).PSendSysMessage("You allready have the Premium rank.");
+			ChatHandler(player->GetSession()).PSendSysMessage("Your Premium Rank will expire in %s.", output.c_str());
 
-					ChatHandler(player->GetSession()).PSendSysMessage("Your Premium Rank will expire in %s.", output.c_str());
-
-				}
-				else
-				{
-					RemoveItem(item->GetEntry(), player);
-
-					sPREM->UpdatePlayerPremiumValue(player, 1, sWorld->GetGameTime());
-
-					ChatHandler(player->GetSession()).PSendSysMessage("Congratulations. You have been awarded the Premium Rank.");
-
-					if (sPREM->IsPremiumTimed())
-					{ 
-						std::string output = sPREM->GetPlayerPremiumTimeLeftInString(player);
-
-						ChatHandler(player->GetSession()).PSendSysMessage("Your Premium Rank will expire in %s days.", output.c_str());
-					}
-				}
-			return true;
 		}
+		else
+		{
+			sPREM->RemoveItem(item->GetEntry(), player);
+
+			sPREM->UpdatePlayerPremiumValue(player, 1, GameTime::GetGameTime());
+
+			ChatHandler(player->GetSession()).PSendSysMessage("Congratulations. You have been awarded the Premium Rank.");
+
+			if (sPREM->IsPremiumTimed())
+			{
+				std::string output = sPREM->GetPlayerPremiumTimeLeftInString(player);
+
+				ChatHandler(player->GetSession()).PSendSysMessage("Your Premium Rank will expire in %s days.", output.c_str());
+			}
+		}
+		return true;
+	}
 };
 
 // Commands
 
-bool CheckIfPlayerInCombatOrDead(Player* player)
+bool PREM::CheckIfPlayerInCombatOrDead(Player* player)
 {
 
 	bool return_type = true;
@@ -892,7 +899,7 @@ bool CheckIfPlayerInCombatOrDead(Player* player)
 
 		return_type = false;
 	}
-	
+
 	if (player->isDying())
 	{
 		ChatHandler(player->GetSession()).PSendSysMessage("ermm .. your dying...");
@@ -930,7 +937,7 @@ bool CheckIfPlayerInCombatOrDead(Player* player)
 	return return_type;
 }
 
-void TeleportPlayer(Player* player, uint8 id)
+void PREM::TeleportPlayer(Player* player, uint8 id)
 {
 	bool IsPrem = sPREM->IsPlayerPremium(player);
 	auto team_id = player->GetTeamId();
@@ -946,59 +953,59 @@ void TeleportPlayer(Player* player, uint8 id)
 		{
 			switch (id)
 			{
-				case(1) :
-					if (sPREM->PremiumLocations.size() != 2)
-					{
-						ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
-					}
-					else
-					{
-						player->TeleportTo(sPREM->PremiumLocations[team_id].map_id, sPREM->PremiumLocations[team_id].x, sPREM->PremiumLocations[team_id].y, sPREM->PremiumLocations[team_id].z, sPREM->PremiumLocations[team_id].o);
-					}
+			case(1):
+				if (sPREM->PremiumLocations.size() != 2)
+				{
+					ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
+				}
+				else
+				{
+					player->TeleportTo(sPREM->PremiumLocations[team_id].map_id, sPREM->PremiumLocations[team_id].x, sPREM->PremiumLocations[team_id].y, sPREM->PremiumLocations[team_id].z, sPREM->PremiumLocations[team_id].o);
+				}
 				break;
 
-				case(2) :
-					if (sPREM->PremiumMallLocations.size() != 2)
-					{
-						ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
-					}
-					else
-					{
-						player->TeleportTo(sPREM->PremiumMallLocations[team_id].map_id, sPREM->PremiumMallLocations[team_id].x, sPREM->PremiumMallLocations[team_id].y, sPREM->PremiumMallLocations[team_id].z, sPREM->PremiumMallLocations[team_id].o);
-					}
+			case(2):
+				if (sPREM->PremiumMallLocations.size() != 2)
+				{
+					ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
+				}
+				else
+				{
+					player->TeleportTo(sPREM->PremiumMallLocations[team_id].map_id, sPREM->PremiumMallLocations[team_id].x, sPREM->PremiumMallLocations[team_id].y, sPREM->PremiumMallLocations[team_id].z, sPREM->PremiumMallLocations[team_id].o);
+				}
 				break;
 
-				case(3) :
-					if (sPREM->PremiumPlayerLocations[guid].guid != 0)  // player customizable home gps.
-					{
-						player->TeleportTo(sPREM->PremiumPlayerLocations[guid].map_id, sPREM->PremiumPlayerLocations[guid].x, sPREM->PremiumPlayerLocations[guid].y, sPREM->PremiumPlayerLocations[guid].z, sPREM->PremiumPlayerLocations[guid].o);
-					}
-					else
-					{
-						ChatHandler(player->GetSession()).PSendSysMessage("You must set a location as home first.");
-					}
+			case(3):
+				if (sPREM->PremiumPlayerLocations[guid].guid != 0)  // player customizable home gps.
+				{
+					player->TeleportTo(sPREM->PremiumPlayerLocations[guid].map_id, sPREM->PremiumPlayerLocations[guid].x, sPREM->PremiumPlayerLocations[guid].y, sPREM->PremiumPlayerLocations[guid].z, sPREM->PremiumPlayerLocations[guid].o);
+				}
+				else
+				{
+					ChatHandler(player->GetSession()).PSendSysMessage("You must set a location as home first.");
+				}
 				break;
 
-				case(4) :
-					if (sPREM->PremiumTeamLocations.size() != 2)
-					{
-						ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
-					}
-					else
-					{
-						player->TeleportTo(sPREM->PremiumTeamLocations[team_id].map_id, sPREM->PremiumTeamLocations[team_id].x, sPREM->PremiumTeamLocations[team_id].y, sPREM->PremiumTeamLocations[team_id].z, sPREM->PremiumTeamLocations[team_id].o);
-					}
+			case(4):
+				if (sPREM->PremiumTeamLocations.size() != 2)
+				{
+					ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
+				}
+				else
+				{
+					player->TeleportTo(sPREM->PremiumTeamLocations[team_id].map_id, sPREM->PremiumTeamLocations[team_id].x, sPREM->PremiumTeamLocations[team_id].y, sPREM->PremiumTeamLocations[team_id].z, sPREM->PremiumTeamLocations[team_id].o);
+				}
 				break;
 
-				case(5) :
-					if (sPREM->PremiumPublicMallLocations.size() != 2)
-					{
-						ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
-					}
-					else
-					{
-						player->TeleportTo(sPREM->PremiumPublicMallLocations[team_id].map_id, sPREM->PremiumPublicMallLocations[team_id].x, sPREM->PremiumPublicMallLocations[team_id].y, sPREM->PremiumPublicMallLocations[team_id].z, sPREM->PremiumPublicMallLocations[team_id].o);
-					}
+			case(5):
+				if (sPREM->PremiumPublicMallLocations.size() != 2)
+				{
+					ChatHandler(player->GetSession()).PSendSysMessage("Under Construction.");
+				}
+				else
+				{
+					player->TeleportTo(sPREM->PremiumPublicMallLocations[team_id].map_id, sPREM->PremiumPublicMallLocations[team_id].x, sPREM->PremiumPublicMallLocations[team_id].y, sPREM->PremiumPublicMallLocations[team_id].z, sPREM->PremiumPublicMallLocations[team_id].o);
+				}
 				break;
 			}
 		}
@@ -1015,19 +1022,19 @@ public:
 		static std::vector<ChatCommand> SetPlayerPremiumCommandTable =
 		{
 			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetPlayerRankTrueCommand, "allows the Admin to set a players Premium rank to 1." },
-			{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetPlayerRankFalseCommand, "allows the Admin to set a players Premium rank to 0." },
+		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetPlayerRankFalseCommand, "allows the Admin to set a players Premium rank to 0." },
 		};
 
 		static std::vector<ChatCommand> SetItemPremiumCommandTable =
 		{
 			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetItemRankTrueCommand, "allows the Admin to set an items Premium rank to 1." },
-			{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetItemRankFalseCommand, "allows the Admin to set an items Premium rank to 0." },
+		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetItemRankFalseCommand, "allows the Admin to set an items Premium rank to 0." },
 		};
 
 		static std::vector<ChatCommand> SetPremiumCommandSetTable =
 		{
 			{ "player", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Player Premium set sub command tree.", SetPlayerPremiumCommandTable },
-			{ "item", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Item Premium set sub command tree.", SetItemPremiumCommandTable },
+		{ "item", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Item Premium set sub command tree.", SetItemPremiumCommandTable },
 		};
 
 		static std::vector<ChatCommand> ResetPremiumCommandTable =
@@ -1038,37 +1045,37 @@ public:
 		static std::vector<ChatCommand> SetPremiumCommandChangeTable =
 		{
 			{ "home", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetHomeTeleport, "allows the player to set there custom teleport location." },
-			{ "drink", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDrinkCommand, "allows the player to increase +5 to Drunk." },
-			{ "drunk", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDrunkCommand, "allows the player become 100 drunk." },
-			{ "sober", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSoborCommand, "allows the player to become sobor." },
-			{ "premium", rbac::RBAC_PERM_COMMAND_SERVER, true, NULL, "Premium set sub command tree.", SetPremiumCommandSetTable },
+		{ "drink", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDrinkCommand, "allows the player to increase +5 to Drunk." },
+		{ "drunk", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDrunkCommand, "allows the player become 100 drunk." },
+		{ "sober", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSoborCommand, "allows the player to become sobor." },
+		{ "premium", rbac::RBAC_PERM_COMMAND_SERVER, true, NULL, "Premium set sub command tree.", SetPremiumCommandSetTable },
 		};
 
 		static std::vector<ChatCommand> CharacterPremiumCommandChangeTable =
 		{
 			{ "race", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChangeRaceCommand, "allows the player to change there race during next login." },
-			{ "faction", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChangeFactionCommand, "allows the player to change there faction during next login." },
-			{ "customize", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumCustomizeCommand, "allows the player to re-costumize there character during next login." },
+		{ "faction", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChangeFactionCommand, "allows the player to change there faction during next login." },
+		{ "customize", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumCustomizeCommand, "allows the player to re-costumize there character during next login." },
 		};
 
 		static std::vector<ChatCommand> ChatPremiumCommandChangeTable =
 		{
 			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChatOnCommand, "allows the player to set there /s channel to a Premium only chat channel.." },
-			{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChatOffCommand, "allows the player to reset there /say to normal function." },
+		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChatOffCommand, "allows the player to reset there /say to normal function." },
 		};
 
 		static std::vector<ChatCommand> PremiumTeleportLocations =
 		{
 			{ "location", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumLocationTeleport, "allows the player to teleport to custom Premium only location." },
-			{ "mall", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMallTeleport, "allows the player to teleport to custom Premium mall location." },
+		{ "mall", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMallTeleport, "allows the player to teleport to custom Premium mall location." },
 		};
 
 		static std::vector<ChatCommand> PremiumTeleportTable =
 		{
 			{ "home", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportHome, "allows the player to teleport to there personal custom location." },
-			{ "base", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportBase, "allows the player to teleport to there team base location." },
-			{ "mall", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportMall, "allows the player to teleport to a public mall custom location." },
-			{ "premium", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium locations sub location tree.", PremiumTeleportLocations },
+		{ "base", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportBase, "allows the player to teleport to there team base location." },
+		{ "mall", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportMall, "allows the player to teleport to a public mall custom location." },
+		{ "premium", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium locations sub location tree.", PremiumTeleportLocations },
 		};
 
 		static std::vector<ChatCommand> PremiumCommandLearnMyTable =
@@ -1094,7 +1101,7 @@ public:
 		static std::vector<ChatCommand> PremiumCommandDnDAppearTable =
 		{
 			{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOffCommand, "allows Premium playesr to appear to you." },
-			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOnCommand, "Blocks Premium players from appearing to you." },
+		{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOnCommand, "Blocks Premium players from appearing to you." },
 		};
 
 		static std::vector<ChatCommand> PremiumCommandDnDTable =
@@ -1105,22 +1112,22 @@ public:
 		static std::vector<ChatCommand> PremiumCommandTable =
 		{
 			{ "chat", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Chat sub command tree.", ChatPremiumCommandChangeTable },
-			{ "buff", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumBuffCommand, "Premium Command used to Buff your character." },
-			{ "maxskills", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMaxSkillsCommand, "Premium Command used to repair all items without cost." },
-			{ "morph", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMorphPlayerCommand, "Premium Command used to morph." },
-			{ "demorph", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDeMorphPlayerCommand, "Premium Command used to demorph." },
-			{ "repair", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumRepairCommand, "Premium Command used to repair all items without cost." },
-			{ "reset", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium reset sub command tree.", ResetPremiumCommandTable },
-			{ "teleport", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium set sub command tree.", PremiumTeleportTable },
-			{ "set", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium set sub command tree.", SetPremiumCommandChangeTable },
-			{ "character", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Character customizing commands.", CharacterPremiumCommandChangeTable },
-			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOnCommand, "Fast activate Premium Title." },
-			{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOffCommand, "Fast un-activate Premium Title." },
-			{ "learn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Learn sub command tree.", PremiumCommandLearnTable },
-			{ "unlearn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Unlearn sub command tree.", PremiumCommandUnlearnTable },
-			{ "who", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumWhoCommand, "List online premium members." },
-			{ "appear", rbac::RBAC_IN_GRANTED_LIST, false, &HandlePremiumAppearCommand, "" },
-			{ "dnd", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium DnD sub command tree.", PremiumCommandDnDTable },
+		{ "buff", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumBuffCommand, "Premium Command used to Buff your character." },
+		{ "maxskills", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMaxSkillsCommand, "Premium Command used to repair all items without cost." },
+		{ "morph", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMorphPlayerCommand, "Premium Command used to morph." },
+		{ "demorph", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDeMorphPlayerCommand, "Premium Command used to demorph." },
+		{ "repair", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumRepairCommand, "Premium Command used to repair all items without cost." },
+		{ "reset", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium reset sub command tree.", ResetPremiumCommandTable },
+		{ "teleport", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium set sub command tree.", PremiumTeleportTable },
+		{ "set", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium set sub command tree.", SetPremiumCommandChangeTable },
+		{ "character", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Character customizing commands.", CharacterPremiumCommandChangeTable },
+		{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOnCommand, "Fast activate Premium Title." },
+		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOffCommand, "Fast un-activate Premium Title." },
+		{ "learn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Learn sub command tree.", PremiumCommandLearnTable },
+		{ "unlearn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Unlearn sub command tree.", PremiumCommandUnlearnTable },
+		{ "who", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumWhoCommand, "List online premium members." },
+		{ "appear", rbac::RBAC_IN_GRANTED_LIST, false, &HandlePremiumAppearCommand, "" },
+		{ "dnd", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium DnD sub command tree.", PremiumCommandDnDTable },
 
 		};
 
@@ -1346,25 +1353,27 @@ public:
 	static bool HandlePremiumChatOnCommand(ChatHandler* handler, const char* args)
 	{
 		Player* player = handler->GetSession()->GetPlayer();
-
+        bool player_premium = sPREM->IsPlayerPremium(player);
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player) || !player->IsGameMaster())
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+        TC_LOG_INFO("server.loading", "- Player/acct Premium:%u", player_premium);
 
-			return_type = false;
-		}
-		else
+		if (player_premium || player->IsGameMaster())
 		{
 			uint32 id = sPREM->GetPlayerPremiumId(player);
 
 			sPREM->Premium[id].chat = true;
-			sPREM->Premium[id].chat_time = sWorld->GetGameTime() - sPREM->SetPremiumChatDelay();
+			sPREM->Premium[id].chat_time = GameTime::GetGameTime() - sPREM->SetPremiumChatDelay();
 
 			ChatHandler(player->GetSession()).PSendSysMessage("Premium Chat on.");
 			ChatHandler(player->GetSession()).PSendSysMessage("now switch to `/s` and chat away.");
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
 		}
 
 		return return_type;
@@ -1373,10 +1382,10 @@ public:
 	static bool HandlePremiumChatOffCommand(ChatHandler* handler, const char* args)
 	{
 		Player* player = handler->GetSession()->GetPlayer();
-
+        bool player_premium = sPREM->IsPlayerPremium(player);
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player) || !player->IsGameMaster())
+        if (!player_premium || !player->IsGameMaster()) // if (!sPREM->IsPlayerPremium(player) || !player->IsGameMaster())
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
@@ -1448,7 +1457,7 @@ public:
 		}
 		else
 		{
-			player->UpdateSkillsToMaxSkillsForLevel();
+			player->UpdateSkillsForLevel(); //UpdateSkillsToMaxSkillsForLevel();
 
 			handler->PSendSysMessage("Your skills have been maxed.");
 			return_type = true;
@@ -1472,12 +1481,12 @@ public:
 			if (sPREM->GetPremiumTitleId() == 0)
 			{
 				handler->PSendSysMessage("The Admin hasn't added a custom title yet.");
-	
+
 				return_type = false;
 			}
 			else
 			{
-				if (!player->HasTitle(sPREM->GetPremiumTitleId())){ player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), false); };
+				if (!player->HasTitle(sPREM->GetPremiumTitleId())) { player->SetTitle(sCharTitlesStore.LookupEntry(sPREM->GetPremiumTitleId()), false); };
 
 				player->SetUInt32Value(PLAYER_CHOSEN_TITLE, sPREM->GetPremiumTitleMaskId());
 
@@ -1526,49 +1535,49 @@ public:
 
 		uint32 family = classEntry->spellfamily;
 
-			for (uint32 i = 0; i < sSkillLineAbilityStore.GetNumRows(); ++i)
+		for (uint32 i = 0; i < sSkillLineAbilityStore.GetNumRows(); ++i)
+		{
+			SkillLineAbilityEntry const* entry = sSkillLineAbilityStore.LookupEntry(i);
+
+			if (!entry)
+				continue;
+
+			SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(entry->spellId);
+
+			if (!spellInfo)
+				continue;
+
+			// skip server-side/triggered spells
+			if (spellInfo->SpellLevel == 0)
+				continue;
+
+			// skip wrong class/race skills
+			if (!handler->GetSession()->GetPlayer()->IsSpellFitByClassAndRace(spellInfo->Id))
+				continue;
+
+			// skip other spell families
+			if (spellInfo->SpellFamilyName != family)
+				continue;
+
+			// skip spells with first rank learned as talent (and all talents then also)
+			if (GetTalentSpellCost(spellInfo->GetFirstRankSpell()->Id) > 0)
+				continue;
+
+			// skip broken spells
+			if (!SpellMgr::IsSpellValid(spellInfo, player, false))
+				continue;
+
+			if (learn) { player->LearnSpell(spellInfo->Id, false); }
+			else
 			{
-				SkillLineAbilityEntry const* entry = sSkillLineAbilityStore.LookupEntry(i);
-
-				if (!entry)
-					continue;
-
-				SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(entry->spellId);
-
-				if (!spellInfo)
-					continue;
-
-				// skip server-side/triggered spells
-				if (spellInfo->SpellLevel == 0)
-					continue;
-
-				// skip wrong class/race skills
-				if (!handler->GetSession()->GetPlayer()->IsSpellFitByClassAndRace(spellInfo->Id))
-					continue;
-
-				// skip other spell families
-				if (spellInfo->SpellFamilyName != family)
-					continue;
-
-				// skip spells with first rank learned as talent (and all talents then also)
-				if (GetTalentSpellCost(spellInfo->GetFirstRankSpell()->Id) > 0)
-					continue;
-
-				// skip broken spells
-				if (!SpellMgr::IsSpellValid(spellInfo, player, false))
-					continue;
-
-				if (learn) { player->LearnSpell(spellInfo->Id, false); }
-				else
+				if (player->HasSpell(spellInfo->Id))
 				{
-					if (player->HasSpell(spellInfo->Id))
-					{
-						player->RemoveSpell(spellInfo->Id, false, true);
-						handler->SendSysMessage(LANG_FORGET_SPELL);
-					}
+					player->RemoveSpell(spellInfo->Id, false, true);
+					handler->SendSysMessage(LANG_FORGET_SPELL);
 				}
 			}
-			if (learn) { handler->SendSysMessage(LANG_COMMAND_LEARN_CLASS_SPELLS); }
+		}
+		if (learn) { handler->SendSysMessage(LANG_COMMAND_LEARN_CLASS_SPELLS); }
 	}
 
 	static bool HandlePremiumLearnMySpells(ChatHandler* handler, const char* args)
@@ -1635,7 +1644,7 @@ public:
 				if (!itr->second)
 					continue;
 
-			Player *target = itr->second->GetPlayer();
+				Player *target = itr->second->GetPlayer();
 
 				if (sPREM->IsPlayerPremium(target))
 				{
@@ -1703,7 +1712,7 @@ public:
 				float x, y, z;
 				target->GetContactPoint(player, x, y, z);
 
-				player->TeleportTo(target->GetMapId(), x, y, z, player->GetAngle(target), TEXT_EMOTE_BOGGLE);
+				player->TeleportTo(target->GetMapId(), x, y, z, player->GetAbsoluteAngle(target), TEXT_EMOTE_BOGGLE);
 				player->SetPhaseMask(target->GetPhaseMask(), true);
 
 				ChatHandler(target->GetSession()).PSendSysMessage("%s Has Premium appeared to You.", player->GetName().c_str());
@@ -1772,7 +1781,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 		Player* target = player->GetSelectedPlayer();
-		uint64 game_time = sWorld->GetGameTime();
+		uint64 game_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 
 		if (player->GetSession()->GetSecurity() >= sPREM->GetGMMinimumRank())
 		{
@@ -1794,7 +1803,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 		Player* target = player->GetSelectedPlayer();
-		uint64 game_time = sWorld->GetGameTime();
+		uint64 game_time = GameTime::GetGameTime();// sWorld->GetGameTime();
 		std::string arg = args;
 
 		if (player->GetSession()->GetSecurity() >= sPREM->GetGMMinimumRank())
@@ -1861,7 +1870,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 1);
+		sPREM->TeleportPlayer(player, 1);
 
 		return true;
 	}
@@ -1870,7 +1879,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 2);
+		sPREM->TeleportPlayer(player, 2);
 
 		return true;
 	}
@@ -1879,7 +1888,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 3);
+		sPREM->TeleportPlayer(player, 3);
 
 		return true;
 	}
@@ -1888,7 +1897,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 4);
+		sPREM->TeleportPlayer(player, 4);
 
 		return true;
 	}
@@ -1897,7 +1906,7 @@ public:
 	{
 		Player* player = handler->GetSession()->GetPlayer();
 
-		TeleportPlayer(player, 5);
+		sPREM->TeleportPlayer(player, 5);
 
 		return true;
 	}
@@ -1928,9 +1937,9 @@ public:
 
 void AddSC_Premium_System()
 {
-	new PREMIUM_Load_Conf;
-	new Unit_Premium_Engine;
-	new Player_Premium_Engine;
-	new Premium_Coin_Script;
-	new Premium_Commands;
+	new PREMIUM_Load_Conf();
+	new Unit_Premium_Engine();
+	new Player_Premium_Engine();
+	new Premium_Coin_Script();
+	new Premium_Commands();
 }
