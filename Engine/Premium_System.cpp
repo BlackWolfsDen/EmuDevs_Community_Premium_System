@@ -1353,10 +1353,8 @@ public:
 	static bool HandlePremiumChatOnCommand(ChatHandler* handler, const char* args)
 	{
 		Player* player = handler->GetSession()->GetPlayer();
-        bool player_premium = sPREM->IsPlayerPremium(player);
+    		bool player_premium = sPREM->IsPlayerPremium(player);
 		bool return_type;
-
-        TC_LOG_INFO("server.loading", "- Player/acct Premium:%u", player_premium);
 
 		if (player_premium || player->IsGameMaster())
 		{
