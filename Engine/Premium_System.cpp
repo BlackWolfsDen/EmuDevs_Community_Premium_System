@@ -1144,16 +1144,16 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->DurabilityRepairAll(0, 0, false);
 			handler->PSendSysMessage("Done.");
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1187,12 +1187,7 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->ResetTalents(true);
 
@@ -1208,6 +1203,11 @@ public:
 
 			return_type = true;
 		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
+		}
 
 		return return_type;
 	}
@@ -1218,13 +1218,7 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			uint8 drink = player->GetDrunkValue();
 
@@ -1233,6 +1227,12 @@ public:
 			handler->PSendSysMessage("!Down the hatch!");
 
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
 		}
 
 		return return_type;
@@ -1244,19 +1244,19 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->SetDrunkValue(100);
 
 			handler->PSendSysMessage("!You drunk!");
 
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
 		}
 
 		return return_type;
@@ -1268,19 +1268,19 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->SetDrunkValue(1);
 
 			handler->PSendSysMessage("You're now sobor..");
 
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
 		}
 
 		return return_type;
@@ -1292,17 +1292,17 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->SetAtLoginFlag(AT_LOGIN_CHANGE_RACE);
 			handler->PSendSysMessage("Relog to change race of your character.");
 
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1313,16 +1313,16 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->SetAtLoginFlag(AT_LOGIN_CHANGE_FACTION);
 			handler->PSendSysMessage("Relog to change faction of your character.");
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1333,17 +1333,17 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->SetAtLoginFlag(AT_LOGIN_CUSTOMIZE);
 			handler->PSendSysMessage("Relog to customize your character.");
 
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1353,7 +1353,7 @@ public:
 	static bool HandlePremiumChatOnCommand(ChatHandler* handler, const char* args)
 	{
 		Player* player = handler->GetSession()->GetPlayer();
-    		bool player_premium = sPREM->IsPlayerPremium(player);
+        bool player_premium = sPREM->IsPlayerPremium(player);
 		bool return_type;
 
 		if (player_premium || player->IsGameMaster())
@@ -1383,13 +1383,7 @@ public:
         bool player_premium = sPREM->IsPlayerPremium(player);
 		bool return_type;
 
-        if (!player_premium || !player->IsGameMaster()) // if (!sPREM->IsPlayerPremium(player) || !player->IsGameMaster())
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return_type = false;
-		}
-		else
+        if (player_premium || player->IsGameMaster()) // if (!sPREM->IsPlayerPremium(player) || !player->IsGameMaster())
 		{
 			uint32 id = sPREM->GetPlayerPremiumId(player);
 
@@ -1398,6 +1392,11 @@ public:
 			ChatHandler(player->GetSession()).PSendSysMessage("Premium Chat off.");
 
 			return_type = true;
+			return_type = false;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 		}
 
 		return return_type;
@@ -1409,15 +1408,15 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->SetDisplayId((uint32)atol((char*)args));
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1428,16 +1427,16 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->RestoreDisplayId();
 
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1448,17 +1447,17 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			player->UpdateSkillsForLevel(); //UpdateSkillsToMaxSkillsForLevel();
 
 			handler->PSendSysMessage("Your skills have been maxed.");
 			return_type = true;
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1469,12 +1468,7 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			if (sPREM->GetPremiumTitleId() == 0)
 			{
@@ -1491,6 +1485,11 @@ public:
 				return_type = true;
 			}
 		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
+		}
 		return return_type;
 	}
 
@@ -1500,13 +1499,7 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			if (sPREM->GetPremiumTitleId() == 0)
 			{
@@ -1520,6 +1513,12 @@ public:
 
 				return_type = true;
 			}
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1585,15 +1584,15 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
+		if (sPREM->IsPlayerPremium(player))
+		{
+			PremiumLearUnlearnSpells(handler, true);
+		}
+		else
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
 			return_type = false;
-		}
-		else
-		{
-			PremiumLearUnlearnSpells(handler, true);
 		}
 		return return_type;
 	}
@@ -1605,15 +1604,15 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
+		if (sPREM->IsPlayerPremium(player))
+		{
+			PremiumLearUnlearnSpells(handler, false);
+		}
+		else
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
 
 			return_type = false;
-		}
-		else
-		{
-			PremiumLearUnlearnSpells(handler, false);
 		}
 		return return_type;
 	}
@@ -1625,13 +1624,7 @@ public:
 
 		bool return_type;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			SessionMap sessions = sWorld->GetAllSessions();
 
@@ -1650,6 +1643,12 @@ public:
 				}
 			}
 		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
+		}
 		return return_type;
 	}
 
@@ -1659,13 +1658,7 @@ public:
 		uint8 pClass = player->getClass();
 
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			Player* target;
 			ObjectGuid targetGuid;
@@ -1724,6 +1717,12 @@ public:
 				return true;
 			}
 		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return false;
+		}
 		return false;
 	}
 
@@ -1735,17 +1734,17 @@ public:
 		bool return_type;
 		uint32 id = sPREM->GetPlayerPremiumId(player);
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			sPREM->Premium[id].dndappear = false;
 
 			ChatHandler(player->GetSession()).PSendSysMessage("You have allowed other Premiums to appear to you.");
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+
+			return_type = false;
 		}
 		return return_type;
 	}
@@ -1917,16 +1916,16 @@ public:
 
 		bool return_type = true;
 
-		if (!sPREM->IsPlayerPremium(player))
-		{
-			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
-			return_type = false;
-		}
-		else
+		if (sPREM->IsPlayerPremium(player))
 		{
 			sPREM->UpdatePlayerCustomHomeTeleport(player->GetGUID(), player->GetMapId(), player->GetPositionX(), player->GetPositionY(), player->GetPositionZ(), player->GetOrientation());
 
 			handler->PSendSysMessage("Location set.");
+		}
+		else
+		{
+			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 
 		return return_type;
