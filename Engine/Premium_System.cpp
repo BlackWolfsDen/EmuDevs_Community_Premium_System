@@ -387,6 +387,18 @@ uint32 PREM::GetPlayerPremiumId(Player* player)
 	return id;
 }
 
+bool PREM::IsPlayerPremium(Player* player)
+{
+    if (Premium[PREM::GetPlayerPremiumId(player)].premium == 1)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 class Premium_Reset_Timer : public BasicEvent
 {
 public:
@@ -1022,19 +1034,19 @@ public:
 		static std::vector<ChatCommand> SetPlayerPremiumCommandTable =
 		{
 			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetPlayerRankTrueCommand, "allows the Admin to set a players Premium rank to 1." },
-		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetPlayerRankFalseCommand, "allows the Admin to set a players Premium rank to 0." },
+    		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetPlayerRankFalseCommand, "allows the Admin to set a players Premium rank to 0." },
 		};
 
 		static std::vector<ChatCommand> SetItemPremiumCommandTable =
 		{
 			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetItemRankTrueCommand, "allows the Admin to set an items Premium rank to 1." },
-		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetItemRankFalseCommand, "allows the Admin to set an items Premium rank to 0." },
+	    	{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetItemRankFalseCommand, "allows the Admin to set an items Premium rank to 0." },
 		};
 
 		static std::vector<ChatCommand> SetPremiumCommandSetTable =
 		{
 			{ "player", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Player Premium set sub command tree.", SetPlayerPremiumCommandTable },
-		{ "item", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Item Premium set sub command tree.", SetItemPremiumCommandTable },
+    		{ "item", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Item Premium set sub command tree.", SetItemPremiumCommandTable },
 		};
 
 		static std::vector<ChatCommand> ResetPremiumCommandTable =
@@ -1044,39 +1056,39 @@ public:
 
 		static std::vector<ChatCommand> SetPremiumCommandChangeTable =
 		{
-			{ "home", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetHomeTeleport, "allows the player to set there custom teleport location." },
-		{ "drink", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDrinkCommand, "allows the player to increase +5 to Drunk." },
-		{ "drunk", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDrunkCommand, "allows the player become 100 drunk." },
-		{ "sober", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSoborCommand, "allows the player to become sobor." },
-		{ "premium", rbac::RBAC_PERM_COMMAND_SERVER, true, NULL, "Premium set sub command tree.", SetPremiumCommandSetTable },
+    		{ "home", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSetHomeTeleport, "allows the player to set there custom teleport location." },
+    		{ "drink", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDrinkCommand, "allows the player to increase +5 to Drunk." },
+    		{ "drunk", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDrunkCommand, "allows the player become 100 drunk." },
+    		{ "sober", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumSoborCommand, "allows the player to become sobor." },
+    		{ "premium", rbac::RBAC_PERM_COMMAND_SERVER, true, NULL, "Premium set sub command tree.", SetPremiumCommandSetTable },
 		};
 
 		static std::vector<ChatCommand> CharacterPremiumCommandChangeTable =
 		{
 			{ "race", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChangeRaceCommand, "allows the player to change there race during next login." },
-		{ "faction", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChangeFactionCommand, "allows the player to change there faction during next login." },
-		{ "customize", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumCustomizeCommand, "allows the player to re-costumize there character during next login." },
+    		{ "faction", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChangeFactionCommand, "allows the player to change there faction during next login." },
+    		{ "customize", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumCustomizeCommand, "allows the player to re-costumize there character during next login." },
 		};
 
 		static std::vector<ChatCommand> ChatPremiumCommandChangeTable =
 		{
-			{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChatOnCommand, "allows the player to set there /s channel to a Premium only chat channel.." },
-		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChatOffCommand, "allows the player to reset there /say to normal function." },
+    		{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChatOnCommand, "allows the player to set there /s channel to a Premium only chat channel.." },
+    		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumChatOffCommand, "allows the player to reset there /say to normal function." },
 		};
 
 		static std::vector<ChatCommand> PremiumTeleportLocations =
 		{
-			{ "location", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumLocationTeleport, "allows the player to teleport to custom Premium only location." },
-		{ "mall", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMallTeleport, "allows the player to teleport to custom Premium mall location." },
+		    { "location", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumLocationTeleport, "allows the player to teleport to custom Premium only location." },
+		    { "mall", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMallTeleport, "allows the player to teleport to custom Premium mall location." },
 		};
 
 		static std::vector<ChatCommand> PremiumTeleportTable =
 		{
-			{ "home", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportHome, "allows the player to teleport to there personal custom location." },
-		{ "base", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportBase, "allows the player to teleport to there team base location." },
-		{ "mall", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportMall, "allows the player to teleport to a public mall custom location." },
-		{ "premium", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium locations sub location tree.", PremiumTeleportLocations },
-		};
+		    { "home", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportHome, "allows the player to teleport to there personal custom location." },
+		    { "base", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportBase, "allows the player to teleport to there team base location." },
+		    { "mall", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumTeleportMall, "allows the player to teleport to a public mall custom location." },
+		    { "premium", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium locations sub location tree.", PremiumTeleportLocations },
+	    };
 
 		static std::vector<ChatCommand> PremiumCommandLearnMyTable =
 		{
@@ -1100,8 +1112,8 @@ public:
 
 		static std::vector<ChatCommand> PremiumCommandDnDAppearTable =
 		{
-			{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOffCommand, "allows Premium playesr to appear to you." },
-		{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOnCommand, "Blocks Premium players from appearing to you." },
+		    { "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOffCommand, "allows Premium playesr to appear to you." },
+	    	{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDnDAppearOnCommand, "Blocks Premium players from appearing to you." },
 		};
 
 		static std::vector<ChatCommand> PremiumCommandDnDTable =
@@ -1111,30 +1123,29 @@ public:
 
 		static std::vector<ChatCommand> PremiumCommandTable =
 		{
-			{ "chat", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Chat sub command tree.", ChatPremiumCommandChangeTable },
-		{ "buff", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumBuffCommand, "Premium Command used to Buff your character." },
-		{ "maxskills", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMaxSkillsCommand, "Premium Command used to repair all items without cost." },
-		{ "morph", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMorphPlayerCommand, "Premium Command used to morph." },
-		{ "demorph", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDeMorphPlayerCommand, "Premium Command used to demorph." },
-		{ "repair", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumRepairCommand, "Premium Command used to repair all items without cost." },
-		{ "reset", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium reset sub command tree.", ResetPremiumCommandTable },
-		{ "teleport", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium set sub command tree.", PremiumTeleportTable },
-		{ "set", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium set sub command tree.", SetPremiumCommandChangeTable },
-		{ "character", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Character customizing commands.", CharacterPremiumCommandChangeTable },
-		{ "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOnCommand, "Fast activate Premium Title." },
-		{ "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOffCommand, "Fast un-activate Premium Title." },
-		{ "learn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Learn sub command tree.", PremiumCommandLearnTable },
-		{ "unlearn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Unlearn sub command tree.", PremiumCommandUnlearnTable },
-		{ "who", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumWhoCommand, "List online premium members." },
-		{ "appear", rbac::RBAC_IN_GRANTED_LIST, false, &HandlePremiumAppearCommand, "" },
-		{ "dnd", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium DnD sub command tree.", PremiumCommandDnDTable },
-
-		};
+		    { "chat", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Chat sub command tree.", ChatPremiumCommandChangeTable },
+		    { "buff", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumBuffCommand, "Premium Command used to Buff your character." },
+		    { "maxskills", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMaxSkillsCommand, "Premium Command used to repair all items without cost." },
+		    { "morph", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumMorphPlayerCommand, "Premium Command used to morph." },
+		    { "demorph", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumDeMorphPlayerCommand, "Premium Command used to demorph." },
+		    { "repair", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumRepairCommand, "Premium Command used to repair all items without cost." },
+		    { "reset", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium reset sub command tree.", ResetPremiumCommandTable },
+		    { "teleport", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium set sub command tree.", PremiumTeleportTable },
+		    { "set", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium set sub command tree.", SetPremiumCommandChangeTable },
+		    { "character", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Character customizing commands.", CharacterPremiumCommandChangeTable },
+		    { "on", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOnCommand, "Fast activate Premium Title." },
+		    { "off", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumOffCommand, "Fast un-activate Premium Title." },
+		    { "learn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Learn sub command tree.", PremiumCommandLearnTable },
+		    { "unlearn", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium Unlearn sub command tree.", PremiumCommandUnlearnTable },
+		    { "who", rbac::RBAC_IN_GRANTED_LIST, true, &HandlePremiumWhoCommand, "List online premium members." },
+		    { "appear", rbac::RBAC_IN_GRANTED_LIST, false, &HandlePremiumAppearCommand, "" },
+		    { "dnd", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium DnD sub command tree.", PremiumCommandDnDTable },
+        };
 
 		static std::vector<ChatCommand> commandTable =
 		{
-			{ "premium", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium custom commands.", PremiumCommandTable },
-		};
+            { "premium", rbac::RBAC_IN_GRANTED_LIST, true, NULL, "Premium custom commands.", PremiumCommandTable },
+        };
 		return commandTable;
 	}
 
@@ -1169,9 +1180,9 @@ public:
 			for (uint8 i = 0; i < sizeof(BUFFS) / sizeof(*BUFFS); i++)
 			{
 				player->AddAura(BUFFS[i], player);
-
-				return_type = true;
 			}
+
+            return_type = true;
 		}
 		else
 		{
@@ -1392,11 +1403,11 @@ public:
 			ChatHandler(player->GetSession()).PSendSysMessage("Premium Chat off.");
 
 			return_type = true;
-			return_type = false;
 		}
 		else
 		{
 			handler->PSendSysMessage("You dont have the Premium rank. You must have the Premium rank to use this command.");
+			return_type = false;
 		}
 
 		return return_type;
