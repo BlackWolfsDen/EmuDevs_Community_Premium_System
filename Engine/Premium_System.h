@@ -117,8 +117,9 @@ public:
 	void SetPremiumChatTeam(uint8 v) { PREMIUM_CHAT_TEAM = v; }
 
 	// Player Getterz
-    bool IsPlayerPremium(Player* player) { return Premium[GetPlayerPremiumId(player)].premium != false; }
+    // bool IsPlayerPremium(Player* player) { return Premium[GetPlayerPremiumId(player)].premium != false; }
     static uint32 GetPlayerPremiumId(Player* player);
+    bool IsPlayerPremium(Player* player);
 	bool DnDAppear(Player* player) { return Premium[GetPlayerPremiumId(player)].dndappear != 0; }
 	static void UpdatePlayerCustomHomeTeleport(uint32 guid, uint32 map_id, float x, float y, float z, float o);
 	uint64 GetPlayerPremiumStartTimeInSeconds(Player* player) { return ((((Premium[GetPlayerPremiumId(player)].time) / 60) / 60) / 24); }
